@@ -132,3 +132,37 @@ resource "aws_instance" "app_server" {
     Name = "microservicios-backend-instance"
   }
 }
+
+# ==========================================
+# AWS API GATEWAY V2 (HTTP API)
+# ==========================================
+
+# 1. Definimos el API Gateway
+resource "aws_apigatewayv2_api" "http_api" {
+  name          = "microservicios-api-gateway"
+  protocol_type = "HTTP"
+  description   = "API Gateway nativo de AWS apuntando a la EC2"
+}
+
+# 2. Creamos la integración (conecta AWS API Gateway con la IP de tu EC2)
+resource "aws_apigatewayv2_integration" "ec2_integration" {
+  api_id             = aws_apigatewayv2_api.http_api.id
+  integration_type   = "HTTP_PROXY"
+  integration_uri    = "http://${aws_instance.app_server.public_ip}:9000/{proxy}" 
+  integration_method = "ANY"
+  connection_type    = "INTERNET"
+}
+
+# 3. Configuramos la ruta para que atrape cualquier endpoint que le pidan
+resource "aws_apigatewayv2_route" "default_route" {
+  api_id    = aws_apigatewayv2_api.http_api.id
+  route_key = "ANY /{proxy+}"
+  target    = "integrations/${aws_apigatewayv2_integration.ec2_integration.id}"
+}
+
+# 4. Desplegamos el Stage por defecto para que funcione automático
+resource "aws_apigatewayv2_stage" "default_stage" {
+  api_id      = aws_apigatewayv2_api.http_api.id
+  name        = "$default"
+  auto_deploy = true
+}

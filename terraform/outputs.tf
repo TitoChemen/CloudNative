@@ -5,3 +5,8 @@ output "instance_public_ip" {
 output "ssh_command" {
   value = "ssh -i ec2-key.pem ubuntu@${aws_instance.app_server.public_ip}"
 }
+
+output "api_gateway_url" {
+  description = "URL pública de tu AWS API Gateway"
+  value       = aws_apigatewayv2_api.http_api.api_endpoint
+}
