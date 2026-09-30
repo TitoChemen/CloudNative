@@ -46,14 +46,14 @@ resource "aws_security_group" "microservicios_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  # Frontend Web (Nginx)
+  # Frontend HTTPS
   ingress {
-    description = "Frontend HTTP"
-    from_port   = 80
-    to_port     = 80
+    description = "Frontend HTTPS"
+    from_port   = 443
+    to_port     = 443
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
-  }
+}
 
   # API Gateway
   ingress {
