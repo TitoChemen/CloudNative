@@ -11,8 +11,27 @@ spring:
       server:
         native:
           search-locations: classpath:/config-microservicios/
+  # ¡Aquí va todo lo de Spring juntito!
+  rabbitmq:
+    host: ${SPRING_RABBITMQ_HOST:localhost}
+    port: ${SPRING_RABBITMQ_PORT:5672}
+    username: ${SPRING_RABBITMQ_USERNAME:guest}
+    password: ${SPRING_RABBITMQ_PASSWORD:guest}
 
 eureka:
   client:
     service-url:
       defaultZone: ${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE:http://localhost:8761/eureka/}
+
+# Esto va fuera de 'spring' porque es una configuración propia nuestra (custom)
+rabbitmq:
+  exchanges:
+    principal: "cloudnative.exchange"
+  queues:
+    notificaciones: "notificaciones.queue"
+    tickets: "tickets.queue"
+    dlq: "cloudnative.dlq"
+  routing-keys:
+    notificaciones: "routing.notificaciones"
+    tickets: "routing.tickets"
+    dlq: "routing.dlq"

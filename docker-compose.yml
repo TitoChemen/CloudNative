@@ -67,6 +67,7 @@ services:
       - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/bd_usuario?createDatabaseIfNotExist=true
       - SPRING_DATASOURCE_USERNAME=root
       - SPRING_DATASOURCE_PASSWORD=root
+      - SPRING_RABBITMQ_HOST=rabbitmq   # <--- ¡Aquí lo chantas!
     depends_on:
       - config-server
       - mysql
@@ -84,6 +85,7 @@ services:
       - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/bd_producto?createDatabaseIfNotExist=true
       - SPRING_DATASOURCE_USERNAME=root
       - SPRING_DATASOURCE_PASSWORD=root
+      - SPRING_RABBITMQ_HOST=rabbitmq   # <--- ¡Y aquí también!
     depends_on:
       - config-server
       - mysql
@@ -95,9 +97,23 @@ services:
     container_name: frontend-app
     restart: always
     ports:
-      - "443:443"
+    - "443:443"
     depends_on:
       - api-gateway
+    networks:
+      - microservices-net
+
+  # RabbitMQ para mensajería y pruebas locales (¡Aquí adentro de services!)
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq-server
+    restart: always
+    ports:
+      - "5672:5672"   # Puerto para los microservicios Spring Boot
+      - "15672:15672"  # Puerto para entrar al panel web (Dashboard)
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
     networks:
       - microservices-net
 

@@ -35,11 +35,30 @@ spring:
       fail-fast: false
     loadbalancer:
       enabled: true
+  # Conexión a RabbitMQ anidada en spring
+  rabbitmq:
+    host: ${SPRING_RABBITMQ_HOST:localhost}
+    port: ${SPRING_RABBITMQ_PORT:5672}
+    username: ${SPRING_RABBITMQ_USERNAME:guest}
+    password: ${SPRING_RABBITMQ_PASSWORD:guest}
 
 eureka:
   client:
     service-url:
       defaultZone: ${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE:http://localhost:8761/eureka/}
   instance:
-    instance-id: ${spring.application.name}:${random.value}
+    instance-id: \({spring.application.name}:\){random.value}
     prefer-ip-address: true
+
+# Configuración personalizada de colas y exchanges para el servicio
+rabbitmq:
+  exchanges:
+    principal: "cloudnative.exchange"
+  queues:
+    notificaciones: "notificaciones.queue"
+    tickets: "tickets.queue"
+    dlq: "cloudnative.dlq"
+  routing-keys:
+    notificaciones: "routing.notificaciones"
+    tickets: "routing.tickets"
+    dlq: "routing.dlq"
