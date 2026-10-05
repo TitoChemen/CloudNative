@@ -2,9 +2,13 @@ import { msalInstance, loginRequest } from "../config/auth-config";
 
 export const loginWithAzurePopup = async () => {
   try {
-    await msalInstance.loginRedirect(loginRequest);
+    const response = await msalInstance.loginPopup(loginRequest);
+    if (response?.account) {
+      msalInstance.setActiveAccount(response.account);
+    }
+    return response;
   } catch (error) {
-    console.error("Error al redirigir a Azure:", error);
+    console.error("Error en el login con popup de Azure:", error);
     throw error;
   }
 };

@@ -12,7 +12,6 @@ services:
       - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
-      # Opcional: monta tus scripts de inicialización de esquemas si tienes init-db
       - ./init-db:/docker-entrypoint-initdb.d
     networks:
       - microservices-net
@@ -27,7 +26,7 @@ services:
     networks:
       - microservices-net
 
-  # Config Server (espera a Eureka)
+  # Config Server
   config-server:
     build: ./config-server
     container_name: config-server
@@ -37,7 +36,8 @@ services:
     environment:
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
     depends_on:
-      - eureka-server
+      eureka-server:
+        condition: service_started
     networks:
       - microservices-net
 
@@ -52,7 +52,10 @@ services:
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
       - SPRING_CONFIG_IMPORT=configserver:http://config-server:8888
     depends_on:
-      - config-server
+      config-server:
+        condition: service_started
+      eureka-server:
+        condition: service_started
     networks:
       - microservices-net
 
@@ -67,10 +70,16 @@ services:
       - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/bd_usuario?createDatabaseIfNotExist=true
       - SPRING_DATASOURCE_USERNAME=root
       - SPRING_DATASOURCE_PASSWORD=root
-      - SPRING_RABBITMQ_HOST=rabbitmq   # <--- ¡Aquí lo chantas!
+      - SPRING_RABBITMQ_HOST=rabbitmq
+      - MAIL_USERNAME=pedido360@kevinsosag.onmicrosoft.com
+      - MAIL_PASSWORD=Mofu803407
     depends_on:
-      - config-server
-      - mysql
+      config-server:
+        condition: service_started
+      mysql:
+        condition: service_started
+      rabbitmq:
+        condition: service_started
     networks:
       - microservices-net
 
@@ -85,35 +94,41 @@ services:
       - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/bd_producto?createDatabaseIfNotExist=true
       - SPRING_DATASOURCE_USERNAME=root
       - SPRING_DATASOURCE_PASSWORD=root
-      - SPRING_RABBITMQ_HOST=rabbitmq   # <--- ¡Y aquí también!
+      - SPRING_RABBITMQ_HOST=rabbitmq
     depends_on:
-      - config-server
-      - mysql
+      config-server:
+        condition: service_started
+      mysql:
+        condition: service_started
+      rabbitmq:
+        condition: service_started
     networks:
       - microservices-net
 
+  # Frontend (Nginx con soporte HTTPS y SPA)
   frontend:
     build: ./frontend
     container_name: frontend-app
     restart: always
     ports:
-    - "443:443"
+      - "443:443"
     depends_on:
-      - api-gateway
+      api-gateway:
+        condition: service_started
     networks:
       - microservices-net
 
-  # RabbitMQ para mensajería y pruebas locales (¡Aquí adentro de services!)
+  # RabbitMQ
   rabbitmq:
     image: rabbitmq:3-management
     container_name: rabbitmq-server
     restart: always
     ports:
-      - "5672:5672"   # Puerto para los microservicios Spring Boot
-      - "15672:15672"  # Puerto para entrar al panel web (Dashboard)
+      - "5672:5672"
+      - "15672:15672"
     environment:
-      RABBITMQ_DEFAULT_USER: guest
-      RABBITMQ_DEFAULT_PASS: guest
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
     networks:
       - microservices-net
 
