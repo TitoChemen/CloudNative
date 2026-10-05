@@ -16,6 +16,17 @@ resource "local_file" "ssh_key" {
   filename        = "${path.module}/ec2-key.pem"
   file_permission = "0400"
 }
+
+resource "local_file" "frontend_env" {
+  content  = <<-EOF
+    VITE_AZURE_CLIENT_ID=0a895358-1500-448a-982f-afc20822336c
+    VITE_AZURE_TENANT_ID=8680c901-cdee-41fb-b489-95b35c8ffaf0
+    VITE_REDIRECT_URI=https://${aws_instance.app_server.public_ip}
+    VITE_API_URL=https://${aws_instance.app_server.public_ip}:9000
+  EOF
+  filename = "${path.module}/frontend/.env"
+}
+
 # Obtener la AMI más reciente de Ubuntu 22.04 LTS
 data "aws_ami" "ubuntu" {
   most_recent = true
