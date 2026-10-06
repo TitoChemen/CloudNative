@@ -159,7 +159,7 @@ resource "aws_apigatewayv2_api" "http_api" {
 resource "aws_apigatewayv2_integration" "ec2_integration" {
   api_id             = aws_apigatewayv2_api.http_api.id
   integration_type   = "HTTP_PROXY"
-  integration_uri    = "http://${aws_instance.app_server.public_ip}:9000/{proxy}" 
+  integration_uri    = "http://${aws_eip.app_server_eip.public_ip}:9000/{proxy}" 
   integration_method = "ANY"
   connection_type    = "INTERNET"
 }
@@ -176,4 +176,16 @@ resource "aws_apigatewayv2_stage" "default_stage" {
   api_id      = aws_apigatewayv2_api.http_api.id
   name        = "$default"
   auto_deploy = true
+}
+
+# ==========================================
+# ELASTIC IP (IP Fija para evitar atados con Azure)
+# ==========================================
+resource "aws_eip" "app_server_eip" {
+  instance = aws_instance.app_server.id
+  domain   = "vpc"
+
+  tags = {
+    Name = "microservicios-eip"
+  }
 }

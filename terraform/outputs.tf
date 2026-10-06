@@ -10,3 +10,8 @@ output "api_gateway_url" {
   description = "URL pública de tu AWS API Gateway"
   value       = aws_apigatewayv2_api.http_api.api_endpoint
 }
+
+output "elastic_ip_fija" {
+  description = "Esta es la IP que tienes que poner en las Redirect URIs del portal de Azure"
+  value       = aws_eip.app_server_eip.public_ip
+}
