@@ -16,6 +16,7 @@ resource "local_file" "ssh_key" {
   filename        = "${path.module}/ec2-key.pem"
   file_permission = "0400"
 }
+
 # Obtener la AMI más reciente de Ubuntu 22.04 LTS
 data "aws_ami" "ubuntu" {
   most_recent = true
@@ -46,6 +47,15 @@ resource "aws_security_group" "microservicios_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
+  # Frontend HTTP
+  ingress {
+    description = "Frontend HTTP"
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
   # Frontend HTTPS
   ingress {
     description = "Frontend HTTPS"
@@ -53,7 +63,7 @@ resource "aws_security_group" "microservicios_sg" {
     to_port     = 443
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
-}
+  }
 
   # API Gateway
   ingress {
@@ -69,6 +79,15 @@ resource "aws_security_group" "microservicios_sg" {
     description = "Eureka Server"
     from_port   = 8761
     to_port     = 8761
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  # RabbitMQ Management Dashboard
+  ingress {
+    description = "RabbitMQ Management UI"
+    from_port   = 15672
+    to_port     = 15672
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
@@ -91,7 +110,7 @@ resource "aws_instance" "app_server" {
   ami                         = data.aws_ami.ubuntu.id
   instance_type               = var.instance_type
   key_name                    = aws_key_pair.generated_key.key_name
-  vpc_security_group_ids = [aws_security_group.microservicios_sg.id]
+  vpc_security_group_ids      = [aws_security_group.microservicios_sg.id]
   associate_public_ip_address = true
 
   root_block_device {
@@ -133,36 +152,48 @@ resource "aws_instance" "app_server" {
   }
 }
 
+# IP Elástica fija para la EC2
+resource "aws_eip" "app_eip" {
+  instance = aws_instance.app_server.id
+  domain   = "vpc"
+}
+
 # ==========================================
 # AWS API GATEWAY V2 (HTTP API)
 # ==========================================
 
-# 1. Definimos el API Gateway
 resource "aws_apigatewayv2_api" "http_api" {
   name          = "microservicios-api-gateway"
   protocol_type = "HTTP"
   description   = "API Gateway nativo de AWS apuntando a la EC2"
 }
 
-# 2. Creamos la integración (conecta AWS API Gateway con la IP de tu EC2)
 resource "aws_apigatewayv2_integration" "ec2_integration" {
   api_id             = aws_apigatewayv2_api.http_api.id
   integration_type   = "HTTP_PROXY"
-  integration_uri    = "http://${aws_instance.app_server.public_ip}:9000/{proxy}" 
+  integration_uri    = "http://${aws_eip.app_eip.public_ip}:9000/{proxy}"
   integration_method = "ANY"
   connection_type    = "INTERNET"
 }
 
-# 3. Configuramos la ruta para que atrape cualquier endpoint que le pidan
 resource "aws_apigatewayv2_route" "default_route" {
   api_id    = aws_apigatewayv2_api.http_api.id
   route_key = "ANY /{proxy+}"
   target    = "integrations/${aws_apigatewayv2_integration.ec2_integration.id}"
 }
 
-# 4. Desplegamos el Stage por defecto para que funcione automático
 resource "aws_apigatewayv2_stage" "default_stage" {
   api_id      = aws_apigatewayv2_api.http_api.id
   name        = "$default"
   auto_deploy = true
+}
+
+output "ec2_public_ip" {
+  description = "IP Elástica pública asignada a la EC2"
+  value       = aws_eip.app_eip.public_ip
+}
+
+output "aws_api_gateway_url" {
+  description = "URL del AWS API Gateway V2"
+  value       = aws_apigatewayv2_stage.default_stage.invoke_url
 }
