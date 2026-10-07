@@ -1,11 +1,11 @@
 package cl.duoc.mensajeria_service.listener;
 
-import cl.duoc.mensajeria.config.RabbitMQConfig;
+import cl.duoc.mensajeria_service.config.RabbitMQConfig;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
 
 @Component
-public class MessageListeners {
+public class MessageListener {
 
     @RabbitListener(queues = RabbitMQConfig.USUARIOS_QUEUE)
     public void receiveUsuariosMessage(String message) {
