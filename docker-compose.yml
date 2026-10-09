@@ -101,11 +101,11 @@ services:
       - -c
       - |
         rabbitmq-server &
-        sleep 8
+        until rabbitmq-diagnostics -q ping; do sleep 2; done
         rabbitmqctl stop_app
         rabbitmqctl join_cluster rabbit@rabbitmq1
         rabbitmqctl start_app
-        tail -f /var/log/rabbitmq/*.log
+        wait
     networks:
       - microservices-net
 
