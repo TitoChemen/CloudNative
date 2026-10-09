@@ -28,7 +28,7 @@ public class RabbitMQConfig {
     @Bean
     public Queue pagosDlq() {
         return QueueBuilder.durable(PAGOS_DLQ)
-                .withArgument("x-message-ttl", 86400000)[cite: 32]
+                .withArgument("x-message-ttl", 86400000)
                 .build();
     }
 
@@ -40,9 +40,9 @@ public class RabbitMQConfig {
     @Bean
     public Queue pagosQueue() {
         return QueueBuilder.durable(PAGOS_QUEUE)
-                .withArgument("x-dead-letter-exchange", PAGOS_DLX)[cite: 31]
-                .withArgument("x-dead-letter-routing-key", PAGOS_DLQ_ROUTING_KEY)[cite: 31]
-                .withArgument("x-message-ttl", 30000)[cite: 31]
+                .withArgument("x-dead-letter-exchange", PAGOS_DLX)
+                .withArgument("x-dead-letter-routing-key", PAGOS_DLQ_ROUTING_KEY)
+                .withArgument("x-message-ttl", 30000)
                 .build();
     }
 
