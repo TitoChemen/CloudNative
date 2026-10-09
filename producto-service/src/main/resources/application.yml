@@ -13,6 +13,11 @@ spring:
         initial-interval: 2000
         max-attempts: 10
         multiplier: 1.5
+  rabbitmq:
+    host: ${SPRING_RABBITMQ_HOST:localhost}
+    port: ${SPRING_RABBITMQ_PORT:5672}
+    username: ${SPRING_RABBITMQ_USERNAME:guest}
+    password: ${SPRING_RABBITMQ_PASSWORD:guest}
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3306/bd_producto}
     username: ${SPRING_DATASOURCE_USERNAME:root}
@@ -35,3 +40,11 @@ spring:
     baseline-on-migrate: true
     repair-on-migrate: true
     clean-on-validation-error: true
+
+rabbitmq:
+  exchanges:
+    principal: productos.exchange
+  queues:
+    principal: productos.queue
+  routingkeys:
+    principal: productos.routingKey
