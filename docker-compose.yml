@@ -178,7 +178,7 @@ services:
     container_name: pago-service
     restart: on-failure
     ports:
-      - "8086:8086"
+      - "8087:8086" # Cambiado a 8087 en el host
     environment:
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
       - SPRING_CONFIG_IMPORT=configserver:http://config-server:8888

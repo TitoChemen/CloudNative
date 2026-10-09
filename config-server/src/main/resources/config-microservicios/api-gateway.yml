@@ -51,12 +51,12 @@ spring:
               filters:
                 - RewritePath=/v3/api-docs/inventario-service, /v3/api-docs
 
-            - id: pagos-service
-              uri: lb://pagos-service
+            - id: pago-service
+              uri: lb://pago-service
               predicates:
-                - Path=/api/v1/pagos/**, /v3/api-docs/pagos-service
+                - Path=/api/pagos/**, /api/v1/pagos/**, /v3/api-docs/pago-service
               filters:
-                - RewritePath=/v3/api-docs/pagos-service, /v3/api-docs
+                - RewritePath=/v3/api-docs/pago-service, /v3/api-docs
 
             - id: facturaciones-service
               uri: lb://facturaciones-service
@@ -75,16 +75,16 @@ spring:
             - id: producto-service
               uri: lb://producto-service
               predicates:
-                - Path=/api/v1/productos/**, /v3/api-docs/producto-service
+                - Path=/api/productos/**, /api/v1/productos/**, /v3/api-docs/producto-service
               filters:
                 - RewritePath=/v3/api-docs/producto-service, /v3/api-docs
 
-            - id: notificaciones-service
-              uri: lb://notificaciones-service
+            - id: mensajeria-service
+              uri: lb://mensajeria-service
               predicates:
-                - Path=/api/v1/notificaciones/**, /v3/api-docs/notificaciones-service
+                - Path=/api/mensajeria/**, /v3/api-docs/mensajeria-service
               filters:
-                - RewritePath=/v3/api-docs/notificaciones-service, /v3/api-docs
+                - RewritePath=/v3/api-docs/mensajeria-service, /v3/api-docs
 
 springdoc:
   swagger-ui:
@@ -97,15 +97,15 @@ springdoc:
       - name: Inventario
         url: /v3/api-docs/inventario-service
       - name: Pagos
-        url: /v3/api-docs/pagos-service
+        url: /v3/api-docs/pago-service
       - name: Facturas
         url: /v3/api-docs/facturaciones-service
       - name: Transporte
         url: /v3/api-docs/transporte-service
       - name: Productos
         url: /v3/api-docs/producto-service
-      - name: Notificaciones
-        url: /v3/api-docs/notificaciones-service
+      - name: Mensajeria
+        url: /v3/api-docs/mensajeria-service
 
 eureka:
   client:

@@ -1,5 +1,5 @@
 server:
-  port: 8086
+  port: 0
   address: 0.0.0.0
 
 spring:
@@ -12,7 +12,6 @@ spring:
           jwk-set-uri: https://login.microsoftonline.com/8680c901-cdee-41fb-b489-95b35c8ffaf0/discovery/v2.0/keys
           issuer-uri: https://login.microsoftonline.com/8680c901-cdee-41fb-b489-95b35c8ffaf0/v2.0
   datasource:
-    # Cambiar 'bd_producto' por la base de datos correspondiente a cada servicio
     url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3306/bd_producto}
     username: ${SPRING_DATASOURCE_USERNAME:root}
     password: ${SPRING_DATASOURCE_PASSWORD:}
@@ -40,8 +39,8 @@ eureka:
     instance-id: ${spring.application.name}:${random.value}
     prefer-ip-address: true
 
-  flyway:
-    enabled: true
-    baseline-on-migrate: true
-    repair-on-migrate: true
-    clean-on-validation-error: true
+flyway:
+  enabled: true
+  baseline-on-migrate: true
+  repair-on-migrate: true
+  clean-on-validation-error: true

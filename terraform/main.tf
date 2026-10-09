@@ -188,10 +188,6 @@ resource "aws_apigatewayv2_stage" "default_stage" {
   auto_deploy = true
 }
 
-output "ec2_public_ip" {
-  description = "IP Elástica pública asignada a la EC2"
-  value       = aws_eip.app_eip.public_ip
-}
 
 output "aws_api_gateway_url" {
   description = "URL del AWS API Gateway V2"
