@@ -9,8 +9,11 @@ import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
-import org.springframework.security.oauth2.jwt.NimbusReactiveJwtDecoder;
-import org.springframework.security.oauth2.jwt.ReactiveJwtDecoder;
+import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
+import org.springframework.security.oauth2.core.OAuth2Error;
+import org.springframework.security.oauth2.core.OAuth2TokenValidator;
+import org.springframework.security.oauth2.core.OAuth2TokenValidatorResult;
+import org.springframework.security.oauth2.jwt.*;
 import org.springframework.security.web.server.SecurityWebFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.reactive.CorsWebFilter;
@@ -27,14 +30,32 @@ public class SecurityConfig {
 
     @Bean
     public ReactiveJwtDecoder reactiveJwtDecoder() {
-        return NimbusReactiveJwtDecoder.withJwkSetUri(jwkSetUri).build();
+        NimbusReactiveJwtDecoder jwtDecoder = NimbusReactiveJwtDecoder.withJwkSetUri(jwkSetUri).build();
+
+        // Validador de marcas de tiempo
+        OAuth2TokenValidator<Jwt> withTimestamp = new JwtTimestampValidator();
+
+        // Validador flexible de emisor para Entra ID (acepta sts.windows.net y login.microsoftonline.com)
+        OAuth2TokenValidator<Jwt> entraIdIssuerValidator = jwt -> {
+            String issuer = jwt.getIssuer() != null ? jwt.getIssuer().toString() : "";
+            if (issuer.contains("sts.windows.net") || issuer.contains("login.microsoftonline.com")) {
+                return OAuth2TokenValidatorResult.success();
+            }
+            return OAuth2TokenValidatorResult.failure(
+                new OAuth2Error("invalid_issuer", "Emisor de Entra ID no válido: " + issuer, null)
+            );
+        };
+
+        // Asignar los validadores combinados
+        jwtDecoder.setJwtValidator(new DelegatingOAuth2TokenValidator<>(withTimestamp, entraIdIssuerValidator));
+
+        return jwtDecoder;
     }
 
     @Bean
     @Order(Ordered.HIGHEST_PRECEDENCE)
     public CorsWebFilter corsWebFilter() {
         CorsConfiguration config = new CorsConfiguration();
-        // Se actualiza la IP a la actual https://13.216.15.96 y se conservan puertos de desarrollo local
         config.setAllowedOrigins(List.of(
             "https://13.216.15.96", 
             "http://localhost:5173", 
@@ -56,15 +77,16 @@ public class SecurityConfig {
     public SecurityWebFilterChain springSecurityFilterChain(ServerHttpSecurity http) {
         http
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
-                .cors(ServerHttpSecurity.CorsSpec::disable) // Delega la gestión de CORS al CorsWebFilter de arriba
+                .cors(ServerHttpSecurity.CorsSpec::disable)
                 .authorizeExchange(exchanges -> exchanges
-                        // Permitir preflight OPTIONS siempre
+                        // Preflight OPTIONS siempre permitido
                         .pathMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        // Endpoints públicos
-                        .pathMatchers("/api/v1/productos/**", "/api/v1/productos").permitAll()
+                        // Lectura pública de productos
+                        .pathMatchers(HttpMethod.GET, "/api/v1/productos/**", "/api/v1/productos").permitAll()
+                        // Registro de usuario público
                         .pathMatchers(HttpMethod.POST, "/api/v1/usuario", "/api/v1/usuario/", "/api/v1/usuario/**").permitAll()
                         .pathMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-                        // Requerir autenticación JWT para el resto de rutas (incluyendo /api/pagos/**)
+                        // Operaciones protegidas que requieren JWT (ej. PUT /api/v1/productos/**, /api/pagos/**)
                         .anyExchange().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()));
