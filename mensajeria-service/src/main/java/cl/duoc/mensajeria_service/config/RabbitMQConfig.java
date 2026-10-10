@@ -9,6 +9,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class RabbitMQConfig {
 
+    // --- USUARIOS ---
     public static final String USUARIOS_EXCHANGE = "usuarios.exchange";
     public static final String USUARIOS_QUEUE = "usuarios.queue";
     public static final String USUARIOS_ROUTING_KEY = "usuarios.routingKey";
@@ -34,6 +35,7 @@ public class RabbitMQConfig {
     @Bean
     public Binding usuariosBinding() { return BindingBuilder.bind(usuariosQueue()).to(usuariosExchange()).with(USUARIOS_ROUTING_KEY); }
 
+    // --- PRODUCTOS ---
     public static final String PRODUCTOS_EXCHANGE = "productos.exchange";
     public static final String PRODUCTOS_QUEUE = "productos.queue";
     public static final String PRODUCTOS_ROUTING_KEY = "productos.routingKey";
@@ -59,6 +61,7 @@ public class RabbitMQConfig {
     @Bean
     public Binding productosBinding() { return BindingBuilder.bind(productosQueue()).to(productosExchange()).with(PRODUCTOS_ROUTING_KEY); }
 
+    // --- PEDIDOS ---
     public static final String PEDIDOS_EXCHANGE = "pedidos.exchange";
     public static final String PEDIDOS_QUEUE = "pedidos.queue";
     public static final String PEDIDOS_ROUTING_KEY = "pedidos.routingKey";
@@ -83,6 +86,32 @@ public class RabbitMQConfig {
     }
     @Bean
     public Binding pedidosBinding() { return BindingBuilder.bind(pedidosQueue()).to(pedidosExchange()).with(PEDIDOS_ROUTING_KEY); }
+
+    // --- PAGOS ---
+    public static final String PAGOS_EXCHANGE = "pagos.exchange";
+    public static final String PAGOS_QUEUE = "pagos.queue";
+    public static final String PAGOS_ROUTING_KEY = "pago.procesado";
+    public static final String PAGOS_DLX = "pagos.dlx";
+    public static final String PAGOS_DLQ = "pagos.dlq";
+    public static final String PAGOS_DLQ_ROUTING_KEY = "pago.dead";
+
+    @Bean
+    public DirectExchange pagosExchange() { return new DirectExchange(PAGOS_EXCHANGE); }
+    @Bean
+    public DirectExchange pagosDlx() { return new DirectExchange(PAGOS_DLX); }
+    @Bean
+    public Queue pagosDlq() { return QueueBuilder.durable(PAGOS_DLQ).build(); }
+    @Bean
+    public Binding pagosDlqBinding() { return BindingBuilder.bind(pagosDlq()).to(pagosDlx()).with(PAGOS_DLQ_ROUTING_KEY); }
+    @Bean
+    public Queue pagosQueue() {
+        return QueueBuilder.durable(PAGOS_QUEUE)
+                .withArgument("x-dead-letter-exchange", PAGOS_DLX)
+                .withArgument("x-dead-letter-routing-key", PAGOS_DLQ_ROUTING_KEY)
+                .build();
+    }
+    @Bean
+    public Binding pagosBinding() { return BindingBuilder.bind(pagosQueue()).to(pagosExchange()).with(PAGOS_ROUTING_KEY); }
 
     @Bean
     public RabbitAdmin rabbitAdmin(ConnectionFactory connectionFactory) {

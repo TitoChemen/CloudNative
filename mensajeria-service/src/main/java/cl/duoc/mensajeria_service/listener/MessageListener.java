@@ -22,6 +22,11 @@ public class MessageListener {
         System.out.println("[RabbitMQ] Mensaje recibido en pedidos.queue: " + message);
     }
 
+    @RabbitListener(queues = RabbitMQConfig.PAGOS_QUEUE)
+    public void receivePagosMessage(String message) {
+        System.out.println("[RabbitMQ] Mensaje recibido en pagos.queue: " + message);
+    }
+
     @RabbitListener(queues = RabbitMQConfig.USUARIOS_DLQ)
     public void receiveUsuariosDlqMessage(String message) {
         System.err.println("[DLQ ALERTA] Mensaje en usuarios.dlq: " + message);
@@ -35,5 +40,10 @@ public class MessageListener {
     @RabbitListener(queues = RabbitMQConfig.PEDIDOS_DLQ)
     public void receivePedidosDlqMessage(String message) {
         System.err.println("[DLQ ALERTA] Mensaje en pedidos.dlq: " + message);
+    }
+
+    @RabbitListener(queues = RabbitMQConfig.PAGOS_DLQ)
+    public void receivePagosDlqMessage(String message) {
+        System.err.println("[DLQ ALERTA] Mensaje en pagos.dlq: " + message);
     }
 }
