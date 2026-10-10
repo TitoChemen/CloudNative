@@ -7,7 +7,6 @@ spring:
       resourceserver:
         jwt:
           jwk-set-uri: https://login.microsoftonline.com/8680c901-cdee-41fb-b489-95b35c8ffaf0/discovery/v2.0/keys
-          issuer-uri: https://login.microsoftonline.com/8680c901-cdee-41fb-b489-95b35c8ffaf0/v2.0
   application:
     name: api-gateway
   cloud:
@@ -16,7 +15,7 @@ spring:
         cors-configurations:
           '[/**]':
             allowed-origins:
-              - "https://44.214.216.28"
+              - "https://13.216.15.96"
               - "http://localhost:5173"
               - "http://localhost:3000"
             allowed-methods:
