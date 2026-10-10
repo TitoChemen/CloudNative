@@ -4,6 +4,7 @@ import cl.duoc.usuario_service.dto.UsuarioDTO;
 import cl.duoc.usuario_service.mapper.UsuarioMapper;
 import cl.duoc.usuario_service.model.Usuario;
 import cl.duoc.usuario_service.repository.UsuarioRepository;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -18,6 +19,9 @@ public class UsuarioService {
     @Autowired
     private UsuarioMapper usuarioMapper;
 
+    @Autowired(required = false)
+    private RabbitTemplate rabbitTemplate;
+
     public List<Usuario> findAll(){
         return usuarioRepository.findAll();
     }
@@ -28,7 +32,21 @@ public class UsuarioService {
     }
 
     public Usuario save(Usuario u){
-        return usuarioRepository.save(u);
+        Usuario usuarioGuardado = usuarioRepository.save(u);
+        
+        // Publicar evento hacia la cola usuarios.queue
+        if (rabbitTemplate != null) {
+            try {
+                String mensaje = String.format("USUARIO_CREADO | ID: %d | Email: %s | Nombre: %s %s", 
+                        usuarioGuardado.getId(), usuarioGuardado.getEmail(), usuarioGuardado.getNombre(), usuarioGuardado.getApellido());
+                
+                rabbitTemplate.convertAndSend("usuarios.exchange", "usuarios.routingKey", mensaje);
+            } catch (Exception e) {
+                System.err.println("No se pudo enviar el evento a RabbitMQ: " + e.getMessage());
+            }
+        }
+        
+        return usuarioGuardado;
     }
 
     public void delete(Long id){
@@ -43,7 +61,7 @@ public class UsuarioService {
         usuarioActualizar.setRut(usuario.getRut());
         usuarioActualizar.setEmail(usuario.getEmail());
         usuarioActualizar.setDireccion(usuario.getDireccion());
-        usuarioActualizar.setPassword(usuario.getPassword()); // Se actualiza la contraseña si aplica
+        usuarioActualizar.setPassword(usuario.getPassword());
 
         return usuarioRepository.save(usuarioActualizar);
     }

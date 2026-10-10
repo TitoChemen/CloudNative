@@ -20,14 +20,14 @@ public class PagoService {
     public Map<String, Object> procesarPago(PagoRequest request) {
         Map<String, Object> respuesta = new HashMap<>();
 
-        // Simulación de regla de negocio / pasarela de pago
-        if ("RECHAZADA".equalsIgnoreCase(request.getTarjeta()) || request.getMonto() > 500000) {
+        // 15% de probabilidad aleatoria de fallo O cuando la tarjeta venga como 'RECHAZADA'
+        boolean esRechazado = "RECHAZADA".equalsIgnoreCase(request.getTarjeta()) || Math.random() < 0.15;
+
+        if (esRechazado) {
             log.warn("[PASARELA SIMULADA] Pago rechazado para el pedido {}", request.getPedidoId());
-            
             String mensajeFallo = String.format("PAGO_RECHAZADO | Pedido: %s | Monto: $%.2f", 
                     request.getPedidoId(), request.getMonto());
             
-            // Enviar directamente al Dead Letter Exchange para simular caída en DLQ[cite: 35]
             rabbitTemplate.convertAndSend(
                     RabbitMQConfig.PAGOS_DLX, 
                     RabbitMQConfig.PAGOS_DLQ_ROUTING_KEY, 
@@ -35,16 +35,15 @@ public class PagoService {
             );
 
             respuesta.put("estado", "RECHAZADO");
-            respuesta.put("mensaje", "Pago rechazado por la pasarela. Evento enviado a DLQ.");
+            respuesta.put("mensaje", "Pago rechazado por la pasarela. Evento enviado a la DLQ.");
             return respuesta;
         }
 
-        // Transacción aprobada
+        // Transacción aprobada sin importar el monto
         log.info("[PASARELA SIMULADA] Pago aprobado exitosamente para el pedido {}", request.getPedidoId());
         String mensajeExito = String.format("PAGO_APROBADO | Pedido: %s | Monto: $%.2f", 
                 request.getPedidoId(), request.getMonto());
 
-        // Publicar evento al exchange principal de pagos[cite: 36]
         rabbitTemplate.convertAndSend(
                 RabbitMQConfig.PAGOS_EXCHANGE, 
                 RabbitMQConfig.PAGOS_ROUTING_KEY, 
