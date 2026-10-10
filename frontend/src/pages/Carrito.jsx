@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useCart, formatCLP } from '../context/CartContext';
+import api from '../services/api';
 import '../styles/Carrito.css';
 
 const COMUNAS_RM = [
@@ -53,13 +54,33 @@ export default function Carrito({ user, products = [], onUpdateProducts, onNavig
     addToCart(item);
   };
 
-  const handleCheckout = () => {
+  const handleCheckout = async () => {
     if (!deliveryData.direccion.trim()) {
       alert('Por favor indica una dirección de entrega válida.');
       return;
     }
 
-    // 1. Descuenta el stock comprado de cada producto
+    const orderId = `ORD-${Math.floor(100000 + Math.random() * 900000)}`;
+
+    // 1. Enviar transacción a pago-service a través de API Gateway para disparar el evento en RabbitMQ
+    try {
+      const pagoRes = await api.post('/api/pagos/procesar', {
+        pedidoId: orderId,
+        monto: total,
+        tarjeta: 'APROBADA' // Puedes cambiar a 'RECHAZADA' para simular fallos directo a la DLQ
+      });
+
+      if (pagoRes?.estado === 'RECHAZADO') {
+        alert(`Pago rechazado por el servidor: ${pagoRes.mensaje}`);
+        return;
+      }
+    } catch (error) {
+      console.error('Error al comunicarse con pago-service:', error);
+      alert(`Error al procesar el pago en el servidor: ${error.message}`);
+      return;
+    }
+
+    // 2. Descuenta el stock comprado de cada producto
     const updatedProducts = products.map((prod) => {
       const boughtItem = cartItems.find((c) => c.id === prod.id);
       if (boughtItem) {
@@ -74,10 +95,10 @@ export default function Carrito({ user, products = [], onUpdateProducts, onNavig
       onUpdateProducts(updatedProducts);
     }
 
-    // 2. Crea orden en el historial y seguimiento
+    // 3. Crea orden en el historial local y seguimiento
     const userIdentifier = user?.rut || user?.email || 'anonimo';
     const nuevaOrden = {
-      orderId: `ORD-${Math.floor(100000 + Math.random() * 900000)}`,
+      orderId: orderId,
       trackingId: `CL-TRK-${Math.floor(10000 + Math.random() * 90000)}`,
       userIdentifier: userIdentifier,
       fecha: new Date().toLocaleDateString('es-CL', {
@@ -100,7 +121,7 @@ export default function Carrito({ user, products = [], onUpdateProducts, onNavig
     localStorage.setItem('pedidos360_active_order', JSON.stringify(nuevaOrden));
 
     clearCart();
-    alert(`¡Compra confirmada! Stock actualizado. Guía: ${nuevaOrden.trackingId}`);
+    alert(`¡Compra confirmada! Pago enviado a RabbitMQ. Guía: ${nuevaOrden.trackingId}`);
 
     if (onNavigateToTracking) {
       onNavigateToTracking();
@@ -144,7 +165,6 @@ export default function Carrito({ user, products = [], onUpdateProducts, onNavig
                     const prodRef = products.find((p) => p.id === item.id);
                     const maxStock = prodRef ? (prodRef.stock ?? 10) : 10;
 
-                    // Mapeo de propiedades para soportar backend y datos antiguos
                     const title = item.nombre || item.title;
                     const specs = item.especificaciones || item.specs;
                     const imgSrc = item.imagenUrl || item.img;
