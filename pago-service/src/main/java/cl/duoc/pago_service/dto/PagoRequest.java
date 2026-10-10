@@ -6,5 +6,6 @@ import lombok.Data;
 public class PagoRequest {
     private String pedidoId;
     private Double monto;
-    private String tarjeta; // "APROBADA", "RECHAZADA", "SIN_FONDO"
+    private String tarjeta;
+    private String email; // Correo dinámico del comprador
 }

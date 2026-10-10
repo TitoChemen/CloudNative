@@ -41,8 +41,9 @@ public class PagoService {
 
         // Transacción aprobada sin importar el monto
         log.info("[PASARELA SIMULADA] Pago aprobado exitosamente para el pedido {}", request.getPedidoId());
-        String mensajeExito = String.format("PAGO_APROBADO | Pedido: %s | Monto: $%.2f", 
-                request.getPedidoId(), request.getMonto());
+       String mensajeExito = String.format("PAGO_APROBADO | Pedido: %s | Monto: $%.2f | Email: %s", 
+                request.getPedidoId(), request.getMonto(), 
+                request.getEmail() != null ? request.getEmail() : "cliente@gmail.com");
 
         rabbitTemplate.convertAndSend(
                 RabbitMQConfig.PAGOS_EXCHANGE, 

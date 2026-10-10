@@ -67,8 +67,9 @@ export default function Carrito({ user, products = [], onUpdateProducts, onNavig
       const pagoRes = await api.post('/api/pagos/procesar', {
         pedidoId: orderId,
         monto: total,
-        tarjeta: 'APROBADA' // Puedes cambiar a 'RECHAZADA' para simular fallos directo a la DLQ
-      });
+        tarjeta: 'APROBADA',
+        email: deliveryData.email || user?.email || 'usuario@gmail.com'
+      }); 
 
       if (pagoRes?.estado === 'RECHAZADO') {
         alert(`Pago rechazado por el servidor: ${pagoRes.mensaje}`);
