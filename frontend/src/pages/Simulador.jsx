@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import api from '../api/axiosConfig';
 
 export default function Simulador() {
   const [email, setEmail] = useState('offgdev@gmail.com');
@@ -7,11 +6,17 @@ export default function Simulador() {
 
   const disparar = async (tipo) => {
     try {
-      const res = await api.post('/api/pagos/simular/evento', { tipo, email });
-      const logEntrada = `[${new Date().toLocaleTimeString()}] [${res.data.estado}] ${res.data.mensaje}`;
+      const response = await fetch('/api/pagos/simular/evento', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tipo, email })
+      });
+
+      const data = await response.json();
+      const logEntrada = `[${new Date().toLocaleTimeString()}] [${data.estado || 'OK'}] ${data.mensaje || 'Evento procesado'}`;
       setLogs(prev => [logEntrada, ...prev]);
     } catch (err) {
-      const logError = `[${new Date().toLocaleTimeString()}] [ERROR] ${err.response?.data?.message || err.message}`;
+      const logError = `[${new Date().toLocaleTimeString()}] [ERROR] ${err.message}`;
       setLogs(prev => [logError, ...prev]);
     }
   };
