@@ -61,6 +61,8 @@ public class SecurityConfig {
                         .pathMatchers("/api/v1/productos/**", "/api/v1/productos").permitAll()
                         // Permitir registro público en todas sus variantes
                         .pathMatchers(HttpMethod.POST, "/api/v1/usuario", "/api/v1/usuario/", "/api/v1/usuario/**").permitAll()
+                        // --- PERMITIR PROCESAR PAGOS SIN TOKEN DE MICROSOFT TENANT ---
+                        .pathMatchers("/api/pagos/**", "/api/pagos").permitAll()
                         .pathMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .anyExchange().authenticated()
                 )
