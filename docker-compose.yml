@@ -164,10 +164,10 @@ services:
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
       - SPRING_CONFIG_IMPORT=configserver:http://config-server:8888
       - SPRING_RABBITMQ_ADDRESSES=rabbitmq1:5672,rabbitmq2:5672
-      - SPRING_MAIL_HOST=smtp.office365.com
+      - SPRING_MAIL_HOST=smtp.gmail.com
       - SPRING_MAIL_PORT=587
-      - SPRING_MAIL_USERNAME=pedido360@kevinsosag.onmicrosoft.com
-      - SPRING_MAIL_PASSWORD=Desarrollo123
+      - SPRING_MAIL_USERNAME=offgdev@gmail.com
+      - SPRING_MAIL_PASSWORD=mffekeaafoetuztr
       - SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH=true
       - SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE=true
     depends_on:
