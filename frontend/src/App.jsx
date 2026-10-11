@@ -12,8 +12,9 @@ import Register from './pages/register';
 import Seguimiento from './pages/seguimiento';
 import Historial from './pages/Historial';
 import Admin from './pages/Admin';
-import './styles/App.css';
 import ProductDetail from "./pages/ProductDetail.jsx";
+import Simulador from './pages/Simulador';
+import './styles/App.css';
 
 const API_GATEWAY_URL = '/api/v1/productos';
 
@@ -64,7 +65,7 @@ function AppContent() {
 
   const handleLogout = () => {
     logout();
-    if (currentPage === 'admin' || currentPage === 'history') {
+    if (currentPage === 'admin' || currentPage === 'history' || currentPage === 'simulador') {
       setCurrentPage('home');
     }
   };
@@ -128,6 +129,7 @@ function AppContent() {
               />
           )}
 
+          {/* VISTA ADMINISTRADOR */}
           {currentPage === 'admin' && (
               isAdmin ? (
                   <Admin
@@ -139,6 +141,34 @@ function AppContent() {
                   <div style={{ textAlign: 'center', padding: '5rem 1rem' }}>
                     <h2 style={{ color: '#ef4444' }}>Acceso Restringido</h2>
                     <p>Debes iniciar sesión con la cuenta de administrador para acceder a este panel.</p>
+                    <button
+                        type="button"
+                        style={{
+                          marginTop: '1rem',
+                          padding: '0.65rem 1.25rem',
+                          backgroundColor: '#2563eb',
+                          color: '#fff',
+                          border: 'none',
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                          fontWeight: '700'
+                        }}
+                        onClick={() => setCurrentPage('login')}
+                    >
+                      Ir al Inicio de Sesión
+                    </button>
+                  </div>
+              )
+          )}
+
+          {/* VISTA SIMULADOR RABBITMQ (SOLO ADMIN) */}
+          {currentPage === 'simulador' && (
+              isAdmin ? (
+                  <Simulador />
+              ) : (
+                  <div style={{ textAlign: 'center', padding: '5rem 1rem' }}>
+                    <h2 style={{ color: '#ef4444' }}>Acceso Restringido</h2>
+                    <p>Debes iniciar sesión con la cuenta de administrador para acceder al simulador de eventos.</p>
                     <button
                         type="button"
                         style={{

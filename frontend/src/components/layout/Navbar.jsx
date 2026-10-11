@@ -29,7 +29,7 @@ function validarRutChileno(rutCompleto) {
   return dv === dvEsperado;
 }
 
-// 2. Formateador dinámico y límite de dígitos (máx 9 caracteres limpios: 12.345.678-K)
+// 2. Formateador dinámico
 function formatearRut(rut) {
   const valorLimpio = rut.replace(/[^0-9kK]/g, '').toUpperCase().slice(0, 9);
   if (valorLimpio.length <= 1) return valorLimpio;
@@ -125,7 +125,6 @@ export default function Navbar({ onNavigate, theme, onToggleTheme }) {
     setShowProfileModal(false);
   };
 
-
   const displayName = (() => {
     if (typeof user === 'object' && user !== null) {
       if (user.nombre) return user.nombre;
@@ -202,18 +201,32 @@ export default function Navbar({ onNavigate, theme, onToggleTheme }) {
 
             {/* Solo visible si es la cuenta de Azure de administración */}
             {isAdmin && (
-              <li>
-                <a
-                  href="#admin"
-                  style={{ color: '#2563eb', fontWeight: '800' }}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    handleNavClick('admin');
-                  }}
-                >
-                  Admin
-                </a>
-              </li>
+              <>
+                <li>
+                  <a
+                    href="#admin"
+                    style={{ color: '#2563eb', fontWeight: '800' }}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleNavClick('admin');
+                    }}
+                  >
+                    Admin
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="#simulador"
+                    style={{ color: '#8b5cf6', fontWeight: '800' }}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleNavClick('simulador');
+                    }}
+                  >
+                    Simulador EDA
+                  </a>
+                </li>
+              </>
             )}
           </ul>
 
@@ -296,17 +309,30 @@ export default function Navbar({ onNavigate, theme, onToggleTheme }) {
 
                       {/* Solo visible en el dropdown si es la cuenta de Azure */}
                       {isAdmin && (
-                        <button
-                          type="button"
-                          className="dropdown-item"
-                          style={{ color: '#2563eb', fontWeight: 'bold' }}
-                          onClick={() => {
-                            handleNavClick('admin');
-                            setIsDropdownOpen(false);
-                          }}
-                        >
-                          Panel Admin
-                        </button>
+                        <>
+                          <button
+                            type="button"
+                            className="dropdown-item"
+                            style={{ color: '#2563eb', fontWeight: 'bold' }}
+                            onClick={() => {
+                              handleNavClick('admin');
+                              setIsDropdownOpen(false);
+                            }}
+                          >
+                            Panel Admin
+                          </button>
+                          <button
+                            type="button"
+                            className="dropdown-item"
+                            style={{ color: '#8b5cf6', fontWeight: 'bold' }}
+                            onClick={() => {
+                              handleNavClick('simulador');
+                              setIsDropdownOpen(false);
+                            }}
+                          >
+                            Simulador EDA
+                          </button>
+                        </>
                       )}
 
                       <button
@@ -348,6 +374,7 @@ export default function Navbar({ onNavigate, theme, onToggleTheme }) {
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <circle cx="9" cy="21" r="1" />
                     <circle cx="20" cy="21" r="1" />
+                    <circle cx="12" cy="7" r="4" />
                     <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
                   </svg>
                   {totalCount > 0 && <span className="cart-badge-pill">{totalCount}</span>}
@@ -370,7 +397,7 @@ export default function Navbar({ onNavigate, theme, onToggleTheme }) {
         </nav>
       </header>
 
-      {/* Modal: Mis Datos Generales */}
+      {/* Modal Profile y Logout permanecen iguales... */}
       {showProfileModal && (
         <div className="profile-modal-overlay" onClick={() => setShowProfileModal(false)}>
           <div className="profile-modal-card" onClick={(e) => e.stopPropagation()}>
@@ -479,7 +506,6 @@ export default function Navbar({ onNavigate, theme, onToggleTheme }) {
         </div>
       )}
 
-      {/* Modal Confirmación Salir */}
       {showLogoutConfirm && (
         <div className="confirm-modal-overlay">
           <div className="confirm-modal-card">
