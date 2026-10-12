@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/admin/queues")
+@RequestMapping("/api/pagos/admin/queues")
 public class RabbitAdminController {
 
     @Autowired
