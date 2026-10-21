@@ -6,15 +6,34 @@ import cl.duoc.producto_service.model.Categoria;
 import cl.duoc.producto_service.model.Producto;
 import cl.duoc.producto_service.repository.CategoriaRepository;
 import cl.duoc.producto_service.repository.ProductoRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
 public class ProductoService {
+
+    private static final Logger log = LoggerFactory.getLogger(ProductoService.class);
+
+    @Autowired
+    private RabbitTemplate rabbitTemplate;
+
+    @Value("${rabbitmq.exchanges.principal:productos.exchange}")
+    private String exchangeProductos;
+
+    @Value("${rabbitmq.routingkeys.principal:productos.routingKey}")
+    private String routingKeyProductos;
+
+    @Value("${notificaciones.email-admin:offgdev@gmail.com}")
+    private String emailAdmin;
 
     @Autowired
     private ProductoRepository productoRepository;
@@ -65,6 +84,7 @@ public class ProductoService {
 
         if (productoDetalles.getNombre() != null) existente.setNombre(productoDetalles.getNombre());
         if (productoDetalles.getPrecio() != null) existente.setPrecio(productoDetalles.getPrecio());
+        Integer stockAnterior = existente.getStock();
         if (productoDetalles.getStock() != null) existente.setStock(productoDetalles.getStock());
 
         if (productoDetalles.getCategoria() != null && productoDetalles.getCategoria().getId() != null) {
@@ -74,6 +94,7 @@ public class ProductoService {
         }
 
         Producto guardado = productoRepository.save(existente);
+        publicarEventoStock(guardado, stockAnterior);
         return productoMapper.convertToDTO(guardado);
     }
 
@@ -85,5 +106,24 @@ public class ProductoService {
         }
         productoRepository.delete(p);
         return true;
+    }
+
+    /**
+     * Publica un evento en RabbitMQ cuando el stock cambia. Si RabbitMQ falla,
+     * solo se registra el error: la actualización del producto no se ve afectada.
+     */
+    private void publicarEventoStock(Producto p, Integer stockAnterior) {
+        if (Objects.equals(stockAnterior, p.getStock())) {
+            return;
+        }
+        String tipo = (p.getStock() != null && p.getStock() == 0) ? "STOCK_AGOTADO" : "STOCK_ACTUALIZADO";
+        String mensaje = String.format("%s | Producto: %s | Stock anterior: %s | Stock actual: %s | Email: %s",
+                tipo, p.getNombre(), stockAnterior, p.getStock(), emailAdmin);
+        try {
+            rabbitTemplate.convertAndSend(exchangeProductos, routingKeyProductos, mensaje);
+            log.info("[RabbitMQ] Evento publicado: {}", mensaje);
+        } catch (Exception e) {
+            log.error("[RabbitMQ] No se pudo publicar el evento de stock: {}", e.getMessage());
+        }
     }
 }

@@ -31,7 +31,7 @@ public class SimuladorController {
             // COLAS PRINCIPALES (NORMALES)
             case "PAGO_APROBADO" -> {
                 String msg = String.format("PAGO_APROBADO | Pedido: ORD-SIM-%d | Monto: $120000.00 | Email: %s", idSim, email);
-                rabbitTemplate.convertAndSend("pagos.exchange", "pagos.routingKey", msg);
+                rabbitTemplate.convertAndSend("pagos.exchange", "pago.procesado", msg);
                 respuesta.put("estado", "OK");
                 respuesta.put("mensaje", "Publicado en [pagos.queue] -> Correo de Compra enviado");
             }
@@ -57,7 +57,7 @@ public class SimuladorController {
             // COLAS DE ERROR (DEAD LETTER QUEUES - DLQ)
             case "PAGO_RECHAZADO" -> {
                 String msg = String.format("PAGO_RECHAZADO | Pedido: ORD-DLQ-%d | Motivo: Fondos Insuficientes | Email: %s", idSim, email);
-                rabbitTemplate.convertAndSend("pagos.dlx", "pagos.dlq.routingKey", msg);
+                rabbitTemplate.convertAndSend("pagos.dlx", "pago.dead", msg);
                 respuesta.put("estado", "WARN");
                 respuesta.put("mensaje", "Publicado en [pagos.dlq] (Dead Letter Queue)");
             }
