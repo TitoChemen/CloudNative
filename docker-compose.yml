@@ -1,0 +1,221 @@
+services:
+  # Base de Datos MySQL
+  mysql:
+    image: mysql:8.0
+    container_name: mysql-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./init-db:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - microservices-net
+
+  # Eureka Server
+  eureka-server:
+    build: ./Eureka-Server
+    container_name: eureka-server
+    restart: on-failure
+    ports:
+      - "8761:8761"
+    networks:
+      - microservices-net
+
+  # Config Server
+  config-server:
+    build: ./config-server
+    container_name: config-server
+    restart: on-failure
+    ports:
+      - "8888:8888"
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+    depends_on:
+      eureka-server:
+        condition: service_started
+    networks:
+      - microservices-net
+
+  # API Gateway
+  api-gateway:
+    build: ./Api-Gateway
+    container_name: api-gateway
+    restart: on-failure
+    ports:
+      - "9000:9000"
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      - SPRING_CONFIG_IMPORT=configserver:http://config-server:8888
+    depends_on:
+      config-server:
+        condition: service_started
+      eureka-server:
+        condition: service_started
+    networks:
+      - microservices-net
+
+  # Nodo 1 del Cluster RabbitMQ (Maestro con Management Dashboard)
+  rabbitmq1:
+    image: rabbitmq:3-management
+    container_name: rabbitmq-node1
+    hostname: rabbitmq1
+    restart: always
+    environment:
+      RABBITMQ_ERLANG_COOKIE: "SECRET_COOKIE_RABBITMQ_CLUSTER"
+      RABBITMQ_NODENAME: "rabbit@rabbitmq1"
+      RABBITMQ_DEFAULT_USER: "guest"
+      RABBITMQ_DEFAULT_PASS: "guest"
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - microservices-net
+
+  # Nodo 2 del Cluster RabbitMQ
+  rabbitmq2:
+    image: rabbitmq:3-management
+    container_name: rabbitmq-node2
+    hostname: rabbitmq2
+    restart: always
+    environment:
+      RABBITMQ_ERLANG_COOKIE: "SECRET_COOKIE_RABBITMQ_CLUSTER"
+      RABBITMQ_NODENAME: "rabbit@rabbitmq2"
+    depends_on:
+      rabbitmq1:
+        condition: service_healthy
+    entrypoint:
+      - sh
+      - -c
+      - |
+        rabbitmq-server &
+        until rabbitmq-diagnostics -q ping; do sleep 2; done
+        rabbitmqctl stop_app
+        rabbitmqctl join_cluster rabbit@rabbitmq1
+        rabbitmqctl start_app
+        wait
+    networks:
+      - microservices-net
+
+  # Usuario Service
+  usuario-service:
+    build: ./usuario-service
+    container_name: usuario-service
+    restart: on-failure
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      - SPRING_CONFIG_IMPORT=configserver:http://config-server:8888
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/bd_usuario?createDatabaseIfNotExist=true
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=root
+      - SPRING_RABBITMQ_ADDRESSES=rabbitmq1:5672,rabbitmq2:5672
+      - MAIL_USERNAME=pedido360@kevinsosag.onmicrosoft.com
+      - MAIL_PASSWORD=Mofu803407
+    depends_on:
+      config-server:
+        condition: service_started
+      mysql:
+        condition: service_healthy
+      rabbitmq1:
+        condition: service_healthy
+    networks:
+      - microservices-net
+
+  # Producto Service
+  producto-service:
+    build: ./producto-service
+    container_name: producto-service
+    restart: on-failure
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      - SPRING_CONFIG_IMPORT=configserver:http://config-server:8888
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/bd_producto?createDatabaseIfNotExist=true
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=root
+      - SPRING_RABBITMQ_ADDRESSES=rabbitmq1:5672,rabbitmq2:5672
+    depends_on:
+      config-server:
+        condition: service_started
+      mysql:
+        condition: service_healthy
+      rabbitmq1:
+        condition: service_healthy
+    networks:
+      - microservices-net
+
+  # Servicio dedicado a Mensajería y RabbitMQ Listeners
+  mensajeria-service:
+    build: ./mensajeria-service
+    container_name: mensajeria-service
+    restart: on-failure
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      - SPRING_CONFIG_IMPORT=configserver:http://config-server:8888
+      - SPRING_RABBITMQ_ADDRESSES=rabbitmq1:5672,rabbitmq2:5672
+      - SPRING_MAIL_HOST=smtp.gmail.com
+      - SPRING_MAIL_PORT=587
+      - SPRING_MAIL_USERNAME=offgdev@gmail.com
+      - SPRING_MAIL_PASSWORD=mffekeaafoetuztr
+      - SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH=true
+      - SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE=true
+    depends_on:
+      rabbitmq1:
+        condition: service_healthy
+      config-server:
+        condition: service_started
+    networks:
+      - microservices-net
+
+  # Servicio de Pago Simulado
+  pago-service:
+    build: ./pago-service
+    container_name: pago-service
+    restart: on-failure
+    ports:
+      - "8087:8086" # Cambiado a 8087 en el host
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      - SPRING_CONFIG_IMPORT=configserver:http://config-server:8888
+      - SPRING_RABBITMQ_ADDRESSES=rabbitmq1:5672,rabbitmq2:5672
+    depends_on:
+      rabbitmq1:
+        condition: service_healthy
+      config-server:
+        condition: service_started
+      eureka-server:
+        condition: service_started
+    networks:
+      - microservices-net
+
+  # Frontend (Nginx con soporte HTTPS y SPA)
+  frontend:
+    build: ./frontend
+    container_name: frontend-app
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      api-gateway:
+        condition: service_started
+    networks:
+      - microservices-net
+
+volumes:
+  mysql_data:
+
+networks:
+  microservices-net:
+    driver: bridge

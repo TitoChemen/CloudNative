@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CompilerConfiguration">
+    <annotationProcessing>
+      <profile default="true" name="Default" enabled="true" />
+      <profile name="Maven default annotation processors profile" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <module name="api-gateway" />
+        <module name="config-server" />
+        <module name="eureka-server" />
+        <module name="pedido-service" />
+      </profile>
+      <profile name="Annotation profile for producto-service" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <processorPath useClasspath="false">
+          <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.46/lombok-1.18.46.jar" />
+        </processorPath>
+        <module name="usuario-service" />
+        <module name="Eureka-Server" />
+        <module name="producto-service" />
+        <module name="inventario-service" />
+        <module name="pagos-service" />
+        <module name="carrito-service" />
+      </profile>
+    </annotationProcessing>
+  </component>
+  <component name="JavacSettings">
+    <option name="ADDITIONAL_OPTIONS_OVERRIDE">
+      <module name="Eureka-Server" options="-parameters" />
+      <module name="api-gateway" options="-parameters" />
+      <module name="carrito-service" options="-parameters" />
+      <module name="config-server" options="-parameters" />
+      <module name="eureka-server" options="-parameters" />
+      <module name="inventario-service" options="-parameters" />
+      <module name="pagos-service" options="-parameters" />
+      <module name="pedido-service" options="-parameters" />
+      <module name="producto-service" options="-parameters" />
+      <module name="usuario-service" options="-parameters" />
+    </option>
+  </component>
+</project>
