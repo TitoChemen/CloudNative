@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   # Base de Datos MySQL
   mysql:
@@ -62,7 +64,48 @@ services:
     networks:
       - microservices-net
 
-  # Nodo 1 del Cluster RabbitMQ (Maestro con Management Dashboard)
+  # --- KAFKA & ZOOKEEPER ---
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    container_name: zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    networks:
+      - microservices-net
+
+  kafka:
+    image: confluentinc/cp-kafka:7.3.2
+    container_name: kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+      - "29092:29092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTERBROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    networks:
+      - microservices-net
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    depends_on:
+      - kafka
+    ports:
+      - "8080:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+    networks:
+      - microservices-net
+
+  # --- CLUSTER RABBITMQ ---
   rabbitmq1:
     image: rabbitmq:3-management
     container_name: rabbitmq-node1
@@ -84,7 +127,6 @@ services:
     networks:
       - microservices-net
 
-  # Nodo 2 del Cluster RabbitMQ
   rabbitmq2:
     image: rabbitmq:3-management
     container_name: rabbitmq-node2
@@ -109,7 +151,7 @@ services:
     networks:
       - microservices-net
 
-  # Usuario Service
+  # --- MICROSERVICIOS ---
   usuario-service:
     build: ./usuario-service
     container_name: usuario-service
@@ -121,6 +163,7 @@ services:
       - SPRING_DATASOURCE_USERNAME=root
       - SPRING_DATASOURCE_PASSWORD=root
       - SPRING_RABBITMQ_ADDRESSES=rabbitmq1:5672,rabbitmq2:5672
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
       - MAIL_USERNAME=pedido360@kevinsosag.onmicrosoft.com
       - MAIL_PASSWORD=Mofu803407
     depends_on:
@@ -130,10 +173,11 @@ services:
         condition: service_healthy
       rabbitmq1:
         condition: service_healthy
+      kafka:
+        condition: service_started
     networks:
       - microservices-net
 
-  # Producto Service
   producto-service:
     build: ./producto-service
     container_name: producto-service
@@ -145,6 +189,7 @@ services:
       - SPRING_DATASOURCE_USERNAME=root
       - SPRING_DATASOURCE_PASSWORD=root
       - SPRING_RABBITMQ_ADDRESSES=rabbitmq1:5672,rabbitmq2:5672
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
     depends_on:
       config-server:
         condition: service_started
@@ -152,10 +197,11 @@ services:
         condition: service_healthy
       rabbitmq1:
         condition: service_healthy
+      kafka:
+        condition: service_started
     networks:
       - microservices-net
 
-  # Servicio dedicado a Mensajería y RabbitMQ Listeners
   mensajeria-service:
     build: ./mensajeria-service
     container_name: mensajeria-service
@@ -164,6 +210,7 @@ services:
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
       - SPRING_CONFIG_IMPORT=configserver:http://config-server:8888
       - SPRING_RABBITMQ_ADDRESSES=rabbitmq1:5672,rabbitmq2:5672
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
       - SPRING_MAIL_HOST=smtp.gmail.com
       - SPRING_MAIL_PORT=587
       - SPRING_MAIL_USERNAME=offgdev@gmail.com
@@ -175,26 +222,30 @@ services:
         condition: service_healthy
       config-server:
         condition: service_started
+      kafka:
+        condition: service_started
     networks:
       - microservices-net
 
-  # Servicio de Pago Simulado
   pago-service:
     build: ./pago-service
     container_name: pago-service
     restart: on-failure
     ports:
-      - "8087:8086" # Cambiado a 8087 en el host
+      - "8087:8086"
     environment:
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
       - SPRING_CONFIG_IMPORT=configserver:http://config-server:8888
       - SPRING_RABBITMQ_ADDRESSES=rabbitmq1:5672,rabbitmq2:5672
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
     depends_on:
       rabbitmq1:
         condition: service_healthy
       config-server:
         condition: service_started
       eureka-server:
+        condition: service_started
+      kafka:
         condition: service_started
     networks:
       - microservices-net

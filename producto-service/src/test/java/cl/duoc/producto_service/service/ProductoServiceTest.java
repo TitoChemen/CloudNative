@@ -1,5 +1,6 @@
 package cl.duoc.producto_service.service;
 
+import cl.duoc.producto_service.model.Categoria;
 import cl.duoc.producto_service.model.Producto;
 import cl.duoc.producto_service.repository.CategoriaRepository;
 import cl.duoc.producto_service.repository.ProductoRepository;
