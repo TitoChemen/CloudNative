@@ -9,7 +9,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class RabbitMQConfig {
 
-    // --- USUARIOS ---
+    // --- DOMINIO USUARIOS ---
     public static final String USUARIOS_EXCHANGE = "usuarios.exchange";
     public static final String USUARIOS_QUEUE = "usuarios.queue";
     public static final String USUARIOS_ROUTING_KEY = "usuarios.routingKey";
@@ -18,13 +18,25 @@ public class RabbitMQConfig {
     public static final String USUARIOS_DLQ_ROUTING_KEY = "usuarios.dlq.routingKey";
 
     @Bean
-    public DirectExchange usuariosExchange() { return new DirectExchange(USUARIOS_EXCHANGE); }
+    public DirectExchange usuariosExchange() {
+        return ExchangeBuilder.directExchange(USUARIOS_EXCHANGE).durable(true).build();
+    }
+
     @Bean
-    public DirectExchange usuariosDlx() { return new DirectExchange(USUARIOS_DLX); }
+    public DirectExchange usuariosDlx() {
+        return ExchangeBuilder.directExchange(USUARIOS_DLX).durable(true).build();
+    }
+
     @Bean
-    public Queue usuariosDlq() { return QueueBuilder.durable(USUARIOS_DLQ).build(); }
+    public Queue usuariosDlq() {
+        return QueueBuilder.durable(USUARIOS_DLQ).build();
+    }
+
     @Bean
-    public Binding usuariosDlqBinding() { return BindingBuilder.bind(usuariosDlq()).to(usuariosDlx()).with(USUARIOS_DLQ_ROUTING_KEY); }
+    public Binding usuariosDlqBinding() {
+        return BindingBuilder.bind(usuariosDlq()).to(usuariosDlx()).with(USUARIOS_DLQ_ROUTING_KEY);
+    }
+
     @Bean
     public Queue usuariosQueue() {
         return QueueBuilder.durable(USUARIOS_QUEUE)
@@ -32,10 +44,13 @@ public class RabbitMQConfig {
                 .withArgument("x-dead-letter-routing-key", USUARIOS_DLQ_ROUTING_KEY)
                 .build();
     }
-    @Bean
-    public Binding usuariosBinding() { return BindingBuilder.bind(usuariosQueue()).to(usuariosExchange()).with(USUARIOS_ROUTING_KEY); }
 
-    // --- PRODUCTOS ---
+    @Bean
+    public Binding usuariosBinding() {
+        return BindingBuilder.bind(usuariosQueue()).to(usuariosExchange()).with(USUARIOS_ROUTING_KEY);
+    }
+
+    // --- DOMINIO PRODUCTOS ---
     public static final String PRODUCTOS_EXCHANGE = "productos.exchange";
     public static final String PRODUCTOS_QUEUE = "productos.queue";
     public static final String PRODUCTOS_ROUTING_KEY = "productos.routingKey";
@@ -44,13 +59,25 @@ public class RabbitMQConfig {
     public static final String PRODUCTOS_DLQ_ROUTING_KEY = "productos.dlq.routingKey";
 
     @Bean
-    public DirectExchange productosExchange() { return new DirectExchange(PRODUCTOS_EXCHANGE); }
+    public DirectExchange productosExchange() {
+        return ExchangeBuilder.directExchange(PRODUCTOS_EXCHANGE).durable(true).build();
+    }
+
     @Bean
-    public DirectExchange productosDlx() { return new DirectExchange(PRODUCTOS_DLX); }
+    public DirectExchange productosDlx() {
+        return ExchangeBuilder.directExchange(PRODUCTOS_DLX).durable(true).build();
+    }
+
     @Bean
-    public Queue productosDlq() { return QueueBuilder.durable(PRODUCTOS_DLQ).build(); }
+    public Queue productosDlq() {
+        return QueueBuilder.durable(PRODUCTOS_DLQ).build();
+    }
+
     @Bean
-    public Binding productosDlqBinding() { return BindingBuilder.bind(productosDlq()).to(productosDlx()).with(PRODUCTOS_DLQ_ROUTING_KEY); }
+    public Binding productosDlqBinding() {
+        return BindingBuilder.bind(productosDlq()).to(productosDlx()).with(PRODUCTOS_DLQ_ROUTING_KEY);
+    }
+
     @Bean
     public Queue productosQueue() {
         return QueueBuilder.durable(PRODUCTOS_QUEUE)
@@ -58,10 +85,13 @@ public class RabbitMQConfig {
                 .withArgument("x-dead-letter-routing-key", PRODUCTOS_DLQ_ROUTING_KEY)
                 .build();
     }
-    @Bean
-    public Binding productosBinding() { return BindingBuilder.bind(productosQueue()).to(productosExchange()).with(PRODUCTOS_ROUTING_KEY); }
 
-    // --- PEDIDOS ---
+    @Bean
+    public Binding productosBinding() {
+        return BindingBuilder.bind(productosQueue()).to(productosExchange()).with(PRODUCTOS_ROUTING_KEY);
+    }
+
+    // --- DOMINIO PEDIDOS ---
     public static final String PEDIDOS_EXCHANGE = "pedidos.exchange";
     public static final String PEDIDOS_QUEUE = "pedidos.queue";
     public static final String PEDIDOS_ROUTING_KEY = "pedidos.routingKey";
@@ -70,13 +100,25 @@ public class RabbitMQConfig {
     public static final String PEDIDOS_DLQ_ROUTING_KEY = "pedidos.dlq.routingKey";
 
     @Bean
-    public DirectExchange pedidosExchange() { return new DirectExchange(PEDIDOS_EXCHANGE); }
+    public DirectExchange pedidosExchange() {
+        return ExchangeBuilder.directExchange(PEDIDOS_EXCHANGE).durable(true).build();
+    }
+
     @Bean
-    public DirectExchange pedidosDlx() { return new DirectExchange(PEDIDOS_DLX); }
+    public DirectExchange pedidosDlx() {
+        return ExchangeBuilder.directExchange(PEDIDOS_DLX).durable(true).build();
+    }
+
     @Bean
-    public Queue pedidosDlq() { return QueueBuilder.durable(PEDIDOS_DLQ).build(); }
+    public Queue pedidosDlq() {
+        return QueueBuilder.durable(PEDIDOS_DLQ).build();
+    }
+
     @Bean
-    public Binding pedidosDlqBinding() { return BindingBuilder.bind(pedidosDlq()).to(pedidosDlx()).with(PEDIDOS_DLQ_ROUTING_KEY); }
+    public Binding pedidosDlqBinding() {
+        return BindingBuilder.bind(pedidosDlq()).to(pedidosDlx()).with(PEDIDOS_DLQ_ROUTING_KEY);
+    }
+
     @Bean
     public Queue pedidosQueue() {
         return QueueBuilder.durable(PEDIDOS_QUEUE)
@@ -84,10 +126,13 @@ public class RabbitMQConfig {
                 .withArgument("x-dead-letter-routing-key", PEDIDOS_DLQ_ROUTING_KEY)
                 .build();
     }
-    @Bean
-    public Binding pedidosBinding() { return BindingBuilder.bind(pedidosQueue()).to(pedidosExchange()).with(PEDIDOS_ROUTING_KEY); }
 
-    // --- PAGOS ---
+    @Bean
+    public Binding pedidosBinding() {
+        return BindingBuilder.bind(pedidosQueue()).to(pedidosExchange()).with(PEDIDOS_ROUTING_KEY);
+    }
+
+    // --- DOMINIO PAGOS ---
     public static final String PAGOS_EXCHANGE = "pagos.exchange";
     public static final String PAGOS_QUEUE = "pagos.queue";
     public static final String PAGOS_ROUTING_KEY = "pago.procesado";
@@ -96,13 +141,25 @@ public class RabbitMQConfig {
     public static final String PAGOS_DLQ_ROUTING_KEY = "pago.dead";
 
     @Bean
-    public DirectExchange pagosExchange() { return new DirectExchange(PAGOS_EXCHANGE); }
+    public DirectExchange pagosExchange() {
+        return ExchangeBuilder.directExchange(PAGOS_EXCHANGE).durable(true).build();
+    }
+
     @Bean
-    public DirectExchange pagosDlx() { return new DirectExchange(PAGOS_DLX); }
+    public DirectExchange pagosDlx() {
+        return ExchangeBuilder.directExchange(PAGOS_DLX).durable(true).build();
+    }
+
     @Bean
-    public Queue pagosDlq() { return QueueBuilder.durable(PAGOS_DLQ).build(); }
+    public Queue pagosDlq() {
+        return QueueBuilder.durable(PAGOS_DLQ).build();
+    }
+
     @Bean
-    public Binding pagosDlqBinding() { return BindingBuilder.bind(pagosDlq()).to(pagosDlx()).with(PAGOS_DLQ_ROUTING_KEY); }
+    public Binding pagosDlqBinding() {
+        return BindingBuilder.bind(pagosDlq()).to(pagosDlx()).with(PAGOS_DLQ_ROUTING_KEY);
+    }
+
     @Bean
     public Queue pagosQueue() {
         return QueueBuilder.durable(PAGOS_QUEUE)
@@ -110,8 +167,11 @@ public class RabbitMQConfig {
                 .withArgument("x-dead-letter-routing-key", PAGOS_DLQ_ROUTING_KEY)
                 .build();
     }
+
     @Bean
-    public Binding pagosBinding() { return BindingBuilder.bind(pagosQueue()).to(pagosExchange()).with(PAGOS_ROUTING_KEY); }
+    public Binding pagosBinding() {
+        return BindingBuilder.bind(pagosQueue()).to(pagosExchange()).with(PAGOS_ROUTING_KEY);
+    }
 
     @Bean
     public RabbitAdmin rabbitAdmin(ConnectionFactory connectionFactory) {

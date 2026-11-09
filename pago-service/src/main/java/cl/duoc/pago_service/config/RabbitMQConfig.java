@@ -17,12 +17,12 @@ public class RabbitMQConfig {
 
     @Bean
     public DirectExchange pagosExchange() {
-        return new DirectExchange(PAGOS_EXCHANGE);
+        return ExchangeBuilder.directExchange(PAGOS_EXCHANGE).durable(true).build();
     }
 
     @Bean
     public DirectExchange pagosDlx() {
-        return new DirectExchange(PAGOS_DLX);
+        return ExchangeBuilder.directExchange(PAGOS_DLX).durable(true).build();
     }
 
     @Bean

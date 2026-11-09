@@ -38,7 +38,8 @@ public class SecurityConfig {
             "http://localhost:4200", 
             "http://localhost:5173", 
             "http://localhost:3000",
-            "https://13.216.15.96"
+            "https://13.216.15.96",
+            "https://localhost"
         ));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         config.setAllowedHeaders(List.of("*"));
@@ -55,14 +56,14 @@ public class SecurityConfig {
     public SecurityWebFilterChain springSecurityFilterChain(ServerHttpSecurity http) {
         http
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
-                .cors(ServerHttpSecurity.CorsSpec::disable) // Delega al CorsWebFilter de arriba
+                .cors(ServerHttpSecurity.CorsSpec::disable)
                 .authorizeExchange(exchanges -> exchanges
                         .pathMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .pathMatchers("/api/v1/productos/**", "/api/v1/productos").permitAll()
-                        // Permitir registro público en todas sus variantes
-                        .pathMatchers(HttpMethod.POST, "/api/v1/usuario", "/api/v1/usuario/", "/api/v1/usuario/**").permitAll()
-                        // --- PERMITIR PROCESAR PAGOS SIN TOKEN DE MICROSOFT TENANT ---
+                        // --- ACCESO PÚBLICO A USUARIOS (REGISTRO Y LOGIN) ---
+                        .pathMatchers("/api/v1/usuario", "/api/v1/usuario/", "/api/v1/usuario/**").permitAll()
                         .pathMatchers("/api/pagos/**", "/api/pagos").permitAll()
+                        .pathMatchers("/api/v1/queues/**", "/api/v1/queues").permitAll()
                         .pathMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .anyExchange().authenticated()
                 )
