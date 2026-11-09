@@ -1,7 +1,7 @@
 package cl.duoc.producto_service.consumer;
 
 import cl.duoc.producto_service.dto.PedidoEventoDTO;
-import cl.duoc.producto_service.entity.Producto;
+import cl.duoc.producto_service.model.Producto;
 import cl.duoc.producto_service.repository.ProductoRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,7 +33,7 @@ public class PedidoProductoConsumer {
         log.info("[PRODUCTO-SERVICE] Evento de pedido recibido. ID Evento: {}", evento.getEventoId());
 
         if (evento.getPayload() == null || evento.getPayload().getItems() == null || evento.getPayload().getItems().isEmpty()) {
-            log.warn("[PRODUCTO-SERVICE] Evento omitido: No se incluyeron ítems en la carga útil.");
+            log.warn("[PRODUCTO-SERVICE] Evento omitido: No se incluyeron ítems en el payload.");
             return;
         }
 
@@ -56,12 +56,13 @@ public class PedidoProductoConsumer {
                 throw new IllegalStateException("Stock insuficiente para el producto ID: " + productoId);
             }
 
-            int nuevoStock = producto.getStock() - cantidadAComprar;
+            int stockAnterior = producto.getStock();
+            int nuevoStock = stockAnterior - cantidadAComprar;
             producto.setStock(nuevoStock);
             productoRepository.save(producto);
 
             log.info("[PRODUCTO-SERVICE SUCCESS] Stock actualizado para Producto ID {}. Stock anterior: {} -> Nuevo Stock: {}",
-                    productoId, producto.getStock() + cantidadAComprar, nuevoStock);
+                    productoId, stockAnterior, nuevoStock);
         }
 
         log.info("[PRODUCTO-SERVICE SUCCESS] Descuento de stock finalizado con éxito para el Pedido ID: {}",
