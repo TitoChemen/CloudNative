@@ -1,6 +1,6 @@
 package cl.duoc.mensajeria_service.consumer;
 
-import cl.duoc.pago_service.dto.PedidoEventoDTO;
+import cl.duoc.mensajeria_service.dto.PedidoEventoDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;

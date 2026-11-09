@@ -1,6 +1,6 @@
 package cl.duoc.producto_service.consumer;
 
-import cl.duoc.pago_service.dto.PedidoEventoDTO;
+import cl.duoc.producto_service.dto.PedidoEventoDTO;
 import cl.duoc.producto_service.entity.Producto;
 import cl.duoc.producto_service.repository.ProductoRepository;
 import org.slf4j.Logger;
