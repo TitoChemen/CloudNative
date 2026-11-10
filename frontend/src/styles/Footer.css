@@ -1,0 +1,134 @@
+.footer {
+  background-color: var(--bg-card);
+  color: var(--text-muted);
+  padding: 3.5rem 1.5rem 1.5rem;
+  width: 100%;
+  border-top: 1px solid var(--border-color);
+  margin-top: auto;
+  box-sizing: border-box;
+  transition: background-color 0.25s ease, border-color 0.25s ease, color 0.25s ease;
+}
+
+.footer-container {
+  max-width: 1300px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 2fr 1fr 1.5fr;
+  gap: 3rem;
+  width: 100%;
+}
+
+.footer-brand {
+  font-weight: 800;
+  font-size: 1.4rem;
+  color: #2563eb;
+  text-decoration: none;
+  letter-spacing: -0.5px;
+  display: inline-block;
+  margin-bottom: 0.75rem;
+}
+
+.footer-brand span {
+  color: var(--text-main);
+  transition: color 0.25s ease;
+}
+
+.footer-desc {
+  font-size: 0.9rem;
+  line-height: 1.6;
+  max-width: 320px;
+  margin-bottom: 1.25rem;
+  color: var(--text-muted);
+  transition: color 0.25s ease;
+}
+
+.footer-socials {
+  display: flex;
+  gap: 1rem;
+}
+
+.footer-socials a {
+  color: var(--text-muted);
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.footer-socials a:hover {
+  color: #2563eb;
+  transform: translateY(-2px);
+}
+
+.footer-icon-social {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.footer-title {
+  color: var(--text-main);
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 1.1rem;
+  transition: color 0.25s ease;
+}
+
+.footer-links,
+.footer-contact {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  font-size: 0.9rem;
+}
+
+.footer-links a {
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.footer-links a:hover {
+  color: #2563eb;
+}
+
+.footer-contact li {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  color: var(--text-muted);
+  transition: color 0.25s ease;
+}
+
+.footer-icon-contact {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  color: var(--text-muted);
+}
+
+.footer-bottom {
+  max-width: 1300px;
+  margin: 3rem auto 0;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border-color);
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  transition: border-color 0.25s ease, color 0.25s ease;
+}
+
+@media (max-width: 768px) {
+  .footer-container {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+}
