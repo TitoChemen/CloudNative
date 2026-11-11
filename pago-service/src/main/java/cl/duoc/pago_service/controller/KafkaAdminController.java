@@ -36,7 +36,7 @@ public class KafkaAdminController {
     }
 
     @PostMapping
-    public ResponseEntity> crearTopico(
+    public ResponseEntity<Map<String, String>> crearTopico(
             @RequestParam(name = "nombre") String nombre,
             @RequestParam(name = "particiones", defaultValue = "1") int particiones,
             @RequestParam(name = "replicas", defaultValue = "1") short replicas) {
@@ -56,7 +56,7 @@ public class KafkaAdminController {
     }
 
     @GetMapping("/{nombre}")
-    public ResponseEntity> obtenerDetalleTopico(@PathVariable(name = "nombre") String nombre) {
+    public ResponseEntity<Map<String, Object>> obtenerDetalleTopico(@PathVariable(name = "nombre") String nombre) {
         try (AdminClient client = AdminClient.create(kafkaAdmin.getConfigurationProperties())) {
             Map<String, TopicDescription> descripcion = client.describeTopics(Collections.singleton(nombre)).allTopicNames().get();
             TopicDescription topicInfo = descripcion.get(nombre);
