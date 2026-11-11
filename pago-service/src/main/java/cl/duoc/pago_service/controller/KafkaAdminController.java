@@ -37,26 +37,26 @@ public class KafkaAdminController {
 
     @PostMapping
     public ResponseEntity> crearTopico(
-            @RequestParam String nombre,
-            @RequestParam(defaultValue = "1") int particiones,
-            @RequestParam(defaultValue = "1") short replicas) {
+            @RequestParam(name = "nombre") String nombre,
+            @RequestParam(name = "particiones", defaultValue = "1") int particiones,
+            @RequestParam(name = "replicas", defaultValue = "1") short replicas) {
         try (AdminClient client = AdminClient.create(kafkaAdmin.getConfigurationProperties())) {
             NewTopic nuevoTopico = new NewTopic(nombre, particiones, replicas);
             client.createTopics(Collections.singleton(nuevoTopico)).all().get();
 
             Map<String, String> respuesta = new HashMap<>();
-            respuesta.put("mensaje", String.format("Tópico '%s' creado exitosamente con %d partición(es).", nombre, particiones));
+            respuesta.put("mensaje", "Topico '" + nombre + "' creado exitosamente con " + particiones + " particion(es).");
             return ResponseEntity.status(HttpStatus.CREATED).body(respuesta);
         } catch (InterruptedException | ExecutionException e) {
             Thread.currentThread().interrupt();
             Map<String, String> error = new HashMap<>();
-            error.put("error", "Error al crear tópico: " + e.getMessage());
+            error.put("error", "Error al crear topico: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
         }
     }
 
     @GetMapping("/{nombre}")
-    public ResponseEntity> obtenerDetalleTopico(@PathVariable String nombre) {
+    public ResponseEntity> obtenerDetalleTopico(@PathVariable(name = "nombre") String nombre) {
         try (AdminClient client = AdminClient.create(kafkaAdmin.getConfigurationProperties())) {
             Map<String, TopicDescription> descripcion = client.describeTopics(Collections.singleton(nombre)).allTopicNames().get();
             TopicDescription topicInfo = descripcion.get(nombre);
