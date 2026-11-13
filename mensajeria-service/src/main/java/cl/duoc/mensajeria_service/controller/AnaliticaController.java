@@ -11,7 +11,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/v1/analitica")
+@RequestMapping("/api/mensajeria/analitica")
 @RequiredArgsConstructor
 public class AnaliticaController {
 

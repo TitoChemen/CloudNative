@@ -36,13 +36,10 @@ public class AnaliticaStreamsConfig {
 
     @Bean
     public KStream<String, String> construirTopologiaAnalitica(StreamsBuilder builder) {
-        // 1. Stream de Pedidos y Pagos ("pedidos.eventos")
         KStream<String, String> pedidosStream = builder.stream(
                 "pedidos.eventos",
                 Consumed.with(Serdes.String(), Serdes.String())
         );
-
-        // Ramificación (branch) entre eventos exitosos y eventos rechazados/error
         Map<String, KStream<String, String>> ramas = pedidosStream
                 .filter((key, value) -> value != null && !value.isBlank())
                 .split(Named.as("pedidos-"))
@@ -51,8 +48,6 @@ public class AnaliticaStreamsConfig {
                 .branch((key, value) -> value.contains("RECHAZADO") || value.contains("ERROR"),
                         Branched.as("fallidos"))
                 .defaultBranch(Branched.as("otros"));
-
-        // Procesar rama exitosa (compras reales de Carrito.jsx y simulaciones OK)
         KStream<String, Double> montosAprobadosStream = ramas.get("pedidos-exitosos")
                 .map((key, json) -> {
                     double monto = extraerMonto(json);
@@ -65,8 +60,6 @@ public class AnaliticaStreamsConfig {
                     registrarEventoReciente("pedidos.eventos", tipo, key, monto);
                     return KeyValue.pair("APROBADO", monto);
                 });
-
-        // Agregación Stateful con Ventana de Tiempo (Tumbling Window de 5 min) en RAM
         montosAprobadosStream
                 .groupByKey(Grouped.with(Serdes.String(), Serdes.Double()))
                 .windowedBy(TimeWindows.ofSizeWithNoGrace(Duration.ofMinutes(5)))
@@ -82,7 +75,6 @@ public class AnaliticaStreamsConfig {
                         ).withKeySerde(Serdes.String()).withValueSerde(Serdes.Double())
                 );
 
-        // Procesar rama fallida (DLQ / rechazados) + KTable de conteo en RAM
         ramas.get("pedidos-fallidos")
                 .map((key, json) -> {
                     String tipo = extraerCampo(json, "tipoEvento", extraerCampo(json, "evento", "PAGO_RECHAZADO"));
@@ -95,7 +87,6 @@ public class AnaliticaStreamsConfig {
                         .withKeySerde(Serdes.String())
                         .withValueSerde(Serdes.Long()));
 
-        // 2. Stream de Auditoría de Usuarios e Inventario ("auditoria.actividad")
         KStream<String, String> auditoriaStream = builder.stream(
                 "auditoria.actividad",
                 Consumed.with(Serdes.String(), Serdes.String())
