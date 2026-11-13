@@ -23,6 +23,16 @@ export default function Admin({ products, onUpdateProducts, onRefreshProducts })
   const [errorMsg, setErrorMsg] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
+  // Estado para analítica en tiempo real (Kafka Streams)
+  const [analitica, setAnalitica] = useState({
+    pagosAprobados: 0,
+    pagosRechazados: 0,
+    montoTotalVentas: 0,
+    eventosAuditoria: 0,
+    ultimosEventos: []
+  });
+  const [analiticaError, setAnaliticaError] = useState('');
+
   const [formData, setFormData] = useState({
     codigo: '',
     nombre: '',
@@ -50,8 +60,31 @@ export default function Admin({ products, onUpdateProducts, onRefreshProducts })
     }
   };
 
+  const fetchAnalitica = async () => {
+    try {
+      const data = await api.get('/api/mensajeria/analitica/resumen');
+      if (data) {
+        setAnalitica({
+          pagosAprobados: data.pagosAprobados ?? 0,
+          pagosRechazados: data.pagosRechazados ?? 0,
+          montoTotalVentas: data.montoTotalVentas ?? 0,
+          eventosAuditoria: data.eventosAuditoria ?? 0,
+          ultimosEventos: Array.isArray(data.ultimosEventos) ? data.ultimosEventos : []
+        });
+        setAnaliticaError('');
+      }
+    } catch (err) {
+      setAnaliticaError('Streams en espera de sesión Azure AD o eventos: ' + err.message);
+    }
+  };
+
   useEffect(() => {
     fetchInventory();
+    fetchAnalitica();
+
+    // Consulta cada 5 segundos las métricas agregadas por Kafka Streams
+    const intervalId = setInterval(fetchAnalitica, 5000);
+    return () => clearInterval(intervalId);
   }, []);
 
   const criticalStockProducts = productList.filter((p) => (p.stock ?? 0) < 4);
@@ -165,6 +198,78 @@ export default function Admin({ products, onUpdateProducts, onRefreshProducts })
 
   return (
       <section className="admin-wrapper">
+        {/* SECCIÓN: MONITOREO EN TIEMPO REAL CON KAFKA STREAMS */}
+        <header className="admin-header">
+          <div>
+            <h2>Monitoreo en Tiempo Real - Kafka Streams</h2>
+            <p>Procesamiento de eventos de pedidos, pagos y auditoría en vivo (actualización cada 5s).</p>
+          </div>
+          <button type="button" className="btn-admin-add" onClick={fetchAnalitica}>
+            Actualizar Métricas
+          </button>
+        </header>
+
+        {analiticaError && (
+            <div style={{
+              backgroundColor: 'rgba(245, 158, 11, 0.15)',
+              color: '#d97706',
+              padding: '0.75rem',
+              borderRadius: '8px',
+              fontWeight: '600',
+              marginBottom: '1rem',
+              border: '1px solid #f59e0b'
+            }}>
+              {analiticaError}
+            </div>
+        )}
+
+        <div className="admin-metrics-grid" style={{ marginBottom: '1.5rem' }}>
+          <div className="metric-card">
+            <span>Pagos Aprobados (Stream)</span>
+            <strong>{analitica.pagosAprobados}</strong>
+          </div>
+          <div className={`metric-card ${analitica.pagosRechazados > 0 ? 'metric-card-danger' : ''}`}>
+            <span>Pagos Rechazados</span>
+            <strong>{analitica.pagosRechazados}</strong>
+          </div>
+          <div className="metric-card">
+            <span>Ventas Procesadas</span>
+            <strong>{formatCurrency(analitica.montoTotalVentas)}</strong>
+          </div>
+          <div className="metric-card">
+            <span>Eventos Auditoría</span>
+            <strong>{analitica.eventosAuditoria}</strong>
+          </div>
+        </div>
+
+        {analitica.ultimosEventos.length > 0 && (
+            <div className="admin-table-container" style={{ marginBottom: '2.5rem' }}>
+              <table className="admin-table">
+                <thead>
+                <tr>
+                  <th>Tópico Kafka</th>
+                  <th>Tipo de Evento</th>
+                  <th>Clave / ID</th>
+                  <th>Monto</th>
+                  <th>Procesado En</th>
+                </tr>
+                </thead>
+                <tbody>
+                {analitica.ultimosEventos.map((ev, idx) => (
+                    <tr key={`${ev.procesadoEn}-${idx}`}>
+                      <td><span className="badge-category">{ev.topico}</span></td>
+                      <td><strong>{ev.tipo}</strong></td>
+                      <td>{ev.key}</td>
+                      <td>{ev.monto > 0 ? formatCurrency(ev.monto) : '-'}</td>
+                      <td>{new Date(ev.procesadoEn).toLocaleTimeString('es-CL')}</td>
+                    </tr>
+                ))}
+                </tbody>
+              </table>
+            </div>
+        )}
+
+        {/* SECCIÓN: INVENTARIO */}
         <header className="admin-header">
           <div>
             <h2>Panel de Administración - Inventario</h2>
