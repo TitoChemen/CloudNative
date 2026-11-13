@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import api from '../services/api';
 import '../styles/register.css';
 
 // 1. Algoritmo de verificación chileno (Módulo 11)
@@ -87,34 +88,23 @@ export default function Register({ onRegisterSuccess, onNavigateToLogin, onBackT
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/v1/usuario', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          nombre: formData.nombre.trim(),
-          apellido: formData.apellido.trim(),
-          rut: formData.rut.trim(),
-          email: formData.email.trim(),
-          direccion: formData.direccion.trim(),
-          password: formData.password
-        }),
+      // Usa api.post -> apunta a VITE_API_URL + /api/v1/usuario y dispara RabbitMQ + Kafka (auditoria.actividad)
+      const usuarioRegistrado = await api.post('/api/v1/usuario', {
+        nombre: formData.nombre.trim(),
+        apellido: formData.apellido.trim(),
+        rut: formData.rut.trim(),
+        email: formData.email.trim(),
+        direccion: formData.direccion.trim(),
+        password: formData.password
       });
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        throw new Error(errorData?.message || 'Error al guardar el usuario en el servidor');
-      }
-
-      const usuarioRegistrado = await response.json();
       alert('¡Usuario registrado con éxito!');
 
-      // Opcional: Persistencia local si la aplicación lo requiere
+      // Respaldo local para compatibilidad con el login local
       try {
         const storedAccounts = JSON.parse(localStorage.getItem('pedidos360_accounts') || '[]');
         const updatedAccounts = storedAccounts.filter(
-            (acc) => acc.email.toLowerCase() !== usuarioRegistrado.email.toLowerCase()
+          (acc) => acc.email.toLowerCase() !== usuarioRegistrado.email.toLowerCase()
         );
         localStorage.setItem('pedidos360_accounts', JSON.stringify([...updatedAccounts, usuarioRegistrado]));
       } catch (err) {

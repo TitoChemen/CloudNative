@@ -28,6 +28,13 @@ public class KafkaConfig {
     @Value("${spring.kafka.bootstrap-servers:kafka:29092}")
     private String bootstrapServers;
 
+    @Bean
+    public KafkaAdmin kafkaAdmin() {
+        Map<String, Object> configs = new HashMap<>();
+        configs.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+        return new KafkaAdmin(configs);
+    }
+
     // 1. Declaración de Tópicos con Parámetros Avanzados de Administración
     @Bean
     public NewTopic pedidosTopic() {
