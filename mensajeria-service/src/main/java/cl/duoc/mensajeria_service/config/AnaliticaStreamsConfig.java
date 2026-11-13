@@ -97,7 +97,7 @@ public class AnaliticaStreamsConfig {
 
         auditoriaStream
                 .filter((key, value) -> value != null && !value.isBlank())
-                .peek((key, json) -> {
+                .foreach((key, json) -> {
                     eventosAuditoria.incrementAndGet();
                     String accion = extraerCampo(json, "accion", "ACTIVIDAD");
                     registrarEventoReciente("auditoria.actividad", accion, key, null);

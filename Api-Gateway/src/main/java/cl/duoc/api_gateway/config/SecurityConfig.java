@@ -60,10 +60,10 @@ public class SecurityConfig {
                 .authorizeExchange(exchanges -> exchanges
                         .pathMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .pathMatchers("/api/v1/productos/**", "/api/v1/productos").permitAll()
-                        // --- ACCESO PÚBLICO A USUARIOS (REGISTRO Y LOGIN) ---
                         .pathMatchers("/api/v1/usuario", "/api/v1/usuario/", "/api/v1/usuario/**").permitAll()
                         .pathMatchers("/api/pagos/**", "/api/pagos").permitAll()
                         .pathMatchers("/api/v1/queues/**", "/api/v1/queues").permitAll()
+                        .pathMatchers("/api/mensajeria/**", "/api/mensajeria").permitAll()
                         .pathMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .anyExchange().authenticated()
                 )
