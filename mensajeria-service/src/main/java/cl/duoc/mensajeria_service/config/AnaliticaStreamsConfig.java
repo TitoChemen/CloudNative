@@ -1,5 +1,6 @@
 package cl.duoc.mensajeria_service.config;
 
+import cl.duoc.mensajeria_service.dto.ResumenAnaliticaDTO.EventoRecienteDTO;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Getter;
@@ -32,7 +33,7 @@ public class AnaliticaStreamsConfig {
     private final AtomicInteger pagosRechazados = new AtomicInteger(0);
     private final DoubleAdder montoTotalVentas = new DoubleAdder();
     private final AtomicInteger eventosAuditoria = new AtomicInteger(0);
-    private final List> ultimosEventos = Collections.synchronizedList(new ArrayList<>());
+    private final List<EventoRecienteDTO> ultimosEventos = Collections.synchronizedList(new ArrayList<>());
 
     @Bean
     public KStream<String, String> construirTopologiaAnalitica(StreamsBuilder builder) {
@@ -40,6 +41,7 @@ public class AnaliticaStreamsConfig {
                 "pedidos.eventos",
                 Consumed.with(Serdes.String(), Serdes.String())
         );
+
         Map<String, KStream<String, String>> ramas = pedidosStream
                 .filter((key, value) -> value != null && !value.isBlank())
                 .split(Named.as("pedidos-"))
@@ -48,6 +50,7 @@ public class AnaliticaStreamsConfig {
                 .branch((key, value) -> value.contains("RECHAZADO") || value.contains("ERROR"),
                         Branched.as("fallidos"))
                 .defaultBranch(Branched.as("otros"));
+
         KStream<String, Double> montosAprobadosStream = ramas.get("pedidos-exitosos")
                 .map((key, json) -> {
                     double monto = extraerMonto(json);
@@ -60,6 +63,7 @@ public class AnaliticaStreamsConfig {
                     registrarEventoReciente("pedidos.eventos", tipo, key, monto);
                     return KeyValue.pair("APROBADO", monto);
                 });
+
         montosAprobadosStream
                 .groupByKey(Grouped.with(Serdes.String(), Serdes.Double()))
                 .windowedBy(TimeWindows.ofSizeWithNoGrace(Duration.ofMinutes(5)))
@@ -97,7 +101,7 @@ public class AnaliticaStreamsConfig {
                 .peek((key, json) -> {
                     eventosAuditoria.incrementAndGet();
                     String accion = extraerCampo(json, "accion", "ACTIVIDAD");
-                    registrarEventoReciente("auditoria.actividad", accion, key, null);
+                    registrarEventoReciente("auditoria.actividad", accion, key, 0.0);
                 });
 
         return pedidosStream;
@@ -128,13 +132,13 @@ public class AnaliticaStreamsConfig {
         return defecto;
     }
 
-    private void registrarEventoReciente(String topico, String tipo, String key, Double monto) {
-        Map<String, Object> registro = Map.of(
-                "topico", topico,
-                "tipo", tipo,
-                "key", key != null ? key : "N/A",
-                "monto", monto != null ? monto : 0.0,
-                "procesadoEn", Instant.now().toString()
+    private void registrarEventoReciente(String topico, String tipo, String key, double monto) {
+        EventoRecienteDTO registro = new EventoRecienteDTO(
+                topico,
+                tipo,
+                key != null ? key : "N/A",
+                monto,
+                Instant.now().toString()
         );
         ultimosEventos.add(0, registro);
         if (ultimosEventos.size() > 15) {
