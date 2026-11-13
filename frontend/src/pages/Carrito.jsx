@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { useCart, formatCLP } from '../context/CartContext';
 import api from '../services/api';
 import '../styles/Carrito.css';
+import { useCart, formatCLP, parsePrice } from '../context/CartContext';
 
 const COMUNAS_RM = [
   'Santiago Centro',
@@ -62,14 +62,25 @@ export default function Carrito({ user, products = [], onUpdateProducts, onNavig
 
     const orderId = `ORD-${Math.floor(100000 + Math.random() * 900000)}`;
 
-    // 1. Enviar transacción a pago-service a través de API Gateway para disparar el evento en RabbitMQ
+    const itemsPayload = cartItems.map((item) => {
+      const unitPrice = item.precio !== undefined ? item.precio : item.currentPrice;
+      return {
+        productoId: item.idProducto || item.id,
+        nombre: item.nombre || item.title,
+        cantidad: item.quantity,
+        precioUnitario: parsePrice(unitPrice)
+      };
+    });
+
+    // 1. Enviar transacción + detalle de ítems a pago-service -> RabbitMQ + Kafka (pedidos.eventos)
     try {
       const pagoRes = await api.post('/api/pagos/procesar', {
         pedidoId: orderId,
         monto: total,
         tarjeta: 'APROBADA',
-        email: deliveryData.email || user?.email || 'usuario@gmail.com'
-      }); 
+        email: deliveryData.email || user?.email || 'usuario@gmail.com',
+        items: itemsPayload
+      });
 
       if (pagoRes?.estado === 'RECHAZADO') {
         alert(`Pago rechazado por el servidor: ${pagoRes.mensaje}`);
@@ -122,7 +133,7 @@ export default function Carrito({ user, products = [], onUpdateProducts, onNavig
     localStorage.setItem('pedidos360_active_order', JSON.stringify(nuevaOrden));
 
     clearCart();
-    alert(`¡Compra confirmada! Pago enviado a RabbitMQ. Guía: ${nuevaOrden.trackingId}`);
+    alert(`¡Compra confirmada! Evento publicado en RabbitMQ y Kafka (pedidos.eventos). Guía: ${nuevaOrden.trackingId}`);
 
     if (onNavigateToTracking) {
       onNavigateToTracking();
@@ -183,8 +194,8 @@ export default function Carrito({ user, products = [], onUpdateProducts, onNavig
                             <p className="cart-item-specs">{specs}</p>
                             <strong className="cart-item-unit-price">{priceText} c/u</strong>
                             <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                        (Máx. disponible: {maxStock})
-                      </span>
+                              (Máx. disponible: {maxStock})
+                            </span>
                           </div>
 
                           <div className="cart-item-actions">

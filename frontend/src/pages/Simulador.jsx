@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import api from '../services/api';
 
 export default function Simulador() {
   const [email, setEmail] = useState('offgdev@gmail.com');
@@ -10,16 +11,10 @@ export default function Simulador() {
     setLogs(prev => [logEntrada, ...prev]);
   };
 
-  // 1. Simulación de Eventos EDA
+  // 1. Simulación de Eventos EDA (RabbitMQ + Kafka)
   const disparar = async (tipo) => {
     try {
-      const response = await fetch('/api/pagos/simular/evento', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tipo, email })
-      });
-
-      const data = await response.json();
+      const data = await api.post('/api/pagos/simular/evento', { tipo, email });
       const badge = data.estado === 'OK' ? '✅ OK' : '⚠️ DLQ';
       agregarLog(badge, data.mensaje || 'Evento procesado');
     } catch (err) {
@@ -30,20 +25,17 @@ export default function Simulador() {
   // 2. Crear Cola Dinámica (AmqpAdmin + DTO Validation)
   const crearColaDinamica = async () => {
     try {
-      const response = await fetch('/api/pagos/admin/queues', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nombreCola: nombreNuevaCola, durable: true })
+      const data = await api.post('/api/pagos/admin/queues', {
+        nombreCola: nombreNuevaCola,
+        durable: true
       });
-
-      const data = await response.json();
-      if (!response.ok) {
-        agregarLog('🛑 VALIDACIÓN 400', data.mensaje || 'Error de validación en DTO');
-      } else {
-        agregarLog('🔨 AMQP ADMIN', data.mensaje);
-      }
+      agregarLog('🔨 AMQP ADMIN', data.mensaje);
     } catch (err) {
-      agregarLog('❌ ERROR', err.message);
+      if (err.message.includes('400')) {
+        agregarLog('🛑 VALIDACIÓN 400', 'El nombre de la cola no puede estar vacío (@NotBlank)');
+      } else {
+        agregarLog('❌ ERROR', err.message);
+      }
     }
   };
 
@@ -54,27 +46,19 @@ export default function Simulador() {
       return;
     }
     try {
-      const response = await fetch(`/api/pagos/admin/queues/${nombreNuevaCola}`, {
-        method: 'DELETE'
-      });
-
-      const data = await response.json();
-      if (!response.ok) {
-        agregarLog('❌ FAIL', data.mensaje || 'No se pudo eliminar la cola');
-      } else {
-        agregarLog('🗑️ AMQP ADMIN', data.mensaje);
-      }
+      const data = await api.delete(`/api/pagos/admin/queues/${nombreNuevaCola}`);
+      agregarLog('🗑️ AMQP ADMIN', data.mensaje);
     } catch (err) {
-      agregarLog('❌ ERROR', err.message);
+      agregarLog('❌ FAIL', err.message);
     }
   };
 
   return (
     <div style={{ maxWidth: '850px', margin: '40px auto', padding: '30px', fontFamily: 'system-ui, sans-serif', backgroundColor: '#1e1e2e', color: '#cdd6f4', borderRadius: '12px', boxShadow: '0 8px 24px rgba(0,0,0,0.3)' }}>
       <h2 style={{ margin: '0 0 10px 0', color: '#89b4fa' }}>
-        ⚡ Panel de Control RabbitMQ & EDA
+        ⚡ Panel de Control RabbitMQ & Kafka EDA
       </h2>
-      <p style={{ color: '#a6adc8', fontSize: '14px' }}>Demostración asíncrona de eventos y gestión dinámica de colas (AmqpAdmin).</p>
+      <p style={{ color: '#a6adc8', fontSize: '14px' }}>Demostración asíncrona de eventos (RabbitMQ + Kafka) y gestión dinámica de colas (AmqpAdmin).</p>
       
       {/* SECCIÓN 1: GESTIÓN DINÁMICA DE COLAS (REQUISITO 6, 7 Y 8 DE LA PAUTA) */}
       <div style={{ backgroundColor: '#181825', padding: '20px', borderRadius: '8px', marginBottom: '25px', border: '1px solid #45475a' }}>
@@ -105,7 +89,7 @@ export default function Simulador() {
         </div>
       </div>
 
-      {/* SECCIÓN 2: SIMULADOR DE EVENTOS (8 COLAS) */}
+      {/* SECCIÓN 2: SIMULADOR DE EVENTOS (8 COLAS + KAFKA) */}
       <div style={{ margin: '20px 0' }}>
         <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: 'bold' }}>Correo de Destino para Notificaciones:</label>
         <input 
@@ -117,38 +101,38 @@ export default function Simulador() {
       </div>
 
       <h3 style={{ fontSize: '15px', color: '#a6e3a1', borderBottom: '1px solid #45475a', paddingBottom: '6px', marginTop: '25px' }}>
-        🟢 Colas Principales (Eventos Exitosos):
+        🟢 Colas Principales & Tópicos Kafka (Eventos Exitosos):
       </h3>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', margin: '15px 0' }}>
         <button onClick={() => disparar('PAGO_APROBADO')} style={{ padding: '12px', backgroundColor: '#a6e3a1', color: '#11111b', fontWeight: 'bold', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '13px' }}>
-          🛒 Pago Aprobado (pagos.queue)
+          🛒 Pago Aprobado (pagos.queue + pedidos.eventos)
         </button>
         <button onClick={() => disparar('USUARIO_CREADO')} style={{ padding: '12px', backgroundColor: '#89b4fa', color: '#11111b', fontWeight: 'bold', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '13px' }}>
-          👤 Usuario Creado (usuarios.queue)
+          👤 Usuario Creado (usuarios.queue + auditoria.actividad)
         </button>
         <button onClick={() => disparar('PEDIDO_DESPACHADO')} style={{ padding: '12px', backgroundColor: '#94e2d5', color: '#11111b', fontWeight: 'bold', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '13px' }}>
-          📦 Pedido Despachado (pedidos.queue)
+          📦 Pedido Despachado (pedidos.queue + pedidos.eventos)
         </button>
         <button onClick={() => disparar('STOCK_ACTUALIZADO')} style={{ padding: '12px', backgroundColor: '#f9e2af', color: '#11111b', fontWeight: 'bold', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '13px' }}>
-          🏷️ Stock Actualizado (productos.queue)
+          🏷️ Stock Actualizado (productos.queue + auditoria.actividad)
         </button>
       </div>
 
       <h3 style={{ fontSize: '15px', color: '#f38ba8', borderBottom: '1px solid #45475a', paddingBottom: '6px', marginTop: '25px' }}>
-        🔴 Dead Letter Queues (Alertas de Fallo & Manejo de Errores):
+        🔴 Dead Letter Queues & Tópicos Kafka (Alertas de Fallo):
       </h3>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', margin: '15px 0' }}>
         <button onClick={() => disparar('PAGO_RECHAZADO')} style={{ padding: '12px', backgroundColor: '#f38ba8', color: '#11111b', fontWeight: 'bold', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '13px' }}>
-          ⚠️ Pago Rechazado (pagos.dlq)
+          ⚠️ Pago Rechazado (pagos.dlq + pedidos.eventos)
         </button>
         <button onClick={() => disparar('USUARIO_ERROR')} style={{ padding: '12px', backgroundColor: '#fab387', color: '#11111b', fontWeight: 'bold', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '13px' }}>
-          ⚠️ Error Usuario (usuarios.dlq)
+          ⚠️ Error Usuario (usuarios.dlq + auditoria.actividad)
         </button>
         <button onClick={() => disparar('PEDIDO_ERROR')} style={{ padding: '12px', backgroundColor: '#f5e0dc', color: '#11111b', fontWeight: 'bold', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '13px' }}>
-          ⚠️ Error Pedido (pedidos.dlq)
+          ⚠️ Error Pedido (pedidos.dlq + pedidos.eventos)
         </button>
         <button onClick={() => disparar('STOCK_AGOTADO')} style={{ padding: '12px', backgroundColor: '#eba0ac', color: '#11111b', fontWeight: 'bold', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '13px' }}>
-          🚨 Stock Agotado (productos.dlq)
+          🚨 Stock Agotado (productos.dlq + auditoria.actividad)
         </button>
       </div>
 
