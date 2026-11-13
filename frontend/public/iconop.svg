@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" shape-rendering="geometricPrecision">
+  <!-- Fondo redondeado de alto contraste -->
+  <rect width="32" height="32" rx="7" fill="#0f172a" />
+
+  <!-- Caja de entrega sólida y nítida -->
+  <!-- Tapa superior (blanco) -->
+  <polygon points="16,5 26,10 16,15 6,10" fill="#ffffff" />
+
+  <!-- Cara izquierda (azul intermedio) -->
+  <polygon points="6,10 16,15 16,26 6,21" fill="#3b82f6" />
+
+  <!-- Cara derecha (azul oscuro con volumen) -->
+  <polygon points="16,15 26,10 26,21 16,26" fill="#1d4ed8" />
+
+  <!-- Cinta de embalaje superior (contraste alto) -->
+  <polygon points="14,6 18,8 18,14 14,12" fill="#93c5fd" />
+
+  <!-- Cinta de embalaje frontal -->
+  <polygon points="14,14 18,16 18,25 14,23" fill="#60a5fa" />
+</svg>

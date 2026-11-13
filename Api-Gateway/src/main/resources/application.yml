@@ -1,0 +1,19 @@
+server:
+  port: 9000
+
+spring:
+  application:
+    name: api-gateway
+  config:
+    import: ${SPRING_CONFIG_IMPORT:optional:configserver:http://localhost:8888}
+  cloud:
+    config:
+      fail-fast: false
+      retry:
+        initial-interval: 2000
+        max-attempts: 10
+        multiplier: 1.5
+  logging:
+    level:
+      org.springframework.cloud.gateway: TRACE
+      org.springframework.cloud.loadbalancer: DEBUG

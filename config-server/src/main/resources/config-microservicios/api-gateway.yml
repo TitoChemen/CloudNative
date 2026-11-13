@@ -1,0 +1,116 @@
+server:
+  address: 0.0.0.0
+
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: https://login.microsoftonline.com/8680c901-cdee-41fb-b489-95b35c8ffaf0/discovery/v2.0/keys
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowed-origins:
+              - "https://13.216.15.96"
+              - "http://localhost:5173"
+              - "http://localhost:3000"
+            allowed-methods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+            allowed-headers: "*"
+            allow-credentials: true
+      server:
+        webflux:
+          routes:
+            - id: usuario-service
+              uri: lb://usuario-service
+              predicates:
+                - Path=/api/v1/usuario/**, /v3/api-docs/usuario-service, /api/v1/usuario
+              filters:
+                - RewritePath=/v3/api-docs/usuario-service, /v3/api-docs
+
+            - id: carrito-service
+              uri: lb://carrito-service
+              predicates:
+                - Path=/api/v1/carritos/**, /v3/api-docs/carrito-service
+              filters:
+                - RewritePath=/v3/api-docs/carrito-service, /v3/api-docs
+
+            - id: inventario-service
+              uri: lb://inventario-service
+              predicates:
+                - Path=/api/v1/inventario/**, /v3/api-docs/inventario-service
+              filters:
+                - RewritePath=/v3/api-docs/inventario-service, /v3/api-docs
+
+            - id: pago-service
+              uri: lb://pago-service
+              predicates:
+                - Path=/api/pagos/**, /api/v1/pagos/**, /api/v1/queues/**, /v3/api-docs/pago-service
+              filters:
+                - RewritePath=/v3/api-docs/pago-service, /v3/api-docs
+
+            - id: facturaciones-service
+              uri: lb://facturaciones-service
+              predicates:
+                - Path=/api/v1/facturas/**, /v3/api-docs/facturaciones-service
+              filters:
+                - RewritePath=/v3/api-docs/facturaciones-service, /v3/api-docs
+
+            - id: transporte-service
+              uri: lb://transporte-service
+              predicates:
+                - Path=/api/v1/transportes/**, /v3/api-docs/transporte-service
+              filters:
+                - RewritePath=/v3/api-docs/transporte-service, /v3/api-docs
+
+            - id: producto-service
+              uri: lb://producto-service
+              predicates:
+                - Path=/api/productos/**, /api/v1/productos/**, /v3/api-docs/producto-service
+              filters:
+                - RewritePath=/v3/api-docs/producto-service, /v3/api-docs
+
+            - id: mensajeria-service
+              uri: lb://mensajeria-service
+              predicates:
+                - Path=/api/mensajeria/**, /v3/api-docs/mensajeria-service
+              filters:
+                - RewritePath=/v3/api-docs/mensajeria-service, /v3/api-docs
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    urls:
+      - name: Usuario
+        url: /v3/api-docs/usuario-service
+      - name: Carrito
+        url: /v3/api-docs/carrito-service
+      - name: Inventario
+        url: /v3/api-docs/inventario-service
+      - name: Pagos
+        url: /v3/api-docs/pago-service
+      - name: Facturas
+        url: /v3/api-docs/facturaciones-service
+      - name: Transporte
+        url: /v3/api-docs/transporte-service
+      - name: Productos
+        url: /v3/api-docs/producto-service
+      - name: Mensajeria
+        url: /v3/api-docs/mensajeria-service
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE:http://localhost:8761/eureka/}
+    register-with-eureka: true
+    fetch-registry: true
+  instance:
+    prefer-ip-address: true
