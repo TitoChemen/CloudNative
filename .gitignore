@@ -1,20 +1,43 @@
-# Default ignored files
+# Variables de entorno con credenciales
+.env
+.env.*
+!.env.example
+
+# Java / Maven
+target/
+*.jar
+*.war
+*.ear
+*.class
+.mvn/
+hs_err_pid*
+
+# Frontend (Node / Vite / React / Angular)
+node_modules/
+dist/
+build/
+.vite/
+
+# IDEs (IntelliJ / VSCode)
+.idea/
 /shelf/
 /workspace.xml
-# Editor-based HTTP Client requests
 /httpRequests/
-# Ignored default folder with query files
 /queries/
-# Datasource local storage ignored files
 /dataSources/
 /dataSources.local.xml
+*.iml
+.vscode/
 
-# Terraform
+# Terraform y claves AWS
 **/.terraform/
 *.tfstate
 *.tfstate.*
 *.tfvars
 *.tfvars.json
-
-# Claves privadas SSH generadas localmente
 *.pem
+
+# Logs y sistema
+*.log
+.DS_Store
+Thumbs.db

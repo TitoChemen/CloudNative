@@ -7,7 +7,7 @@ services:
     container_name: mysql-db
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: root
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
     ports:
       - "3306:3306"
     volumes:
@@ -64,19 +64,22 @@ services:
     networks:
       - microservices-net
 
-  # --- KAFKA & ZOOKEEPER ---
+  # --- CLÚSTER KAFKA & ZOOKEEPER (2 BROKERS) ---
   zookeeper:
-    image: confluentinc/cp-zookeeper:latest
+    image: confluentinc/cp-zookeeper:7.3.2
     container_name: zookeeper
+    restart: unless-stopped
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
+      KAFKA_HEAP_OPTS: "-Xmx128M -Xms128M"
     networks:
       - microservices-net
 
   kafka:
     image: confluentinc/cp-kafka:7.3.2
     container_name: kafka
+    restart: unless-stopped
     depends_on:
       - zookeeper
     ports:
@@ -88,9 +91,38 @@ services:
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       KAFKA_INTERBROKER_LISTENER_NAME: PLAINTEXT
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 2
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 2
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_HEAP_OPTS: "-Xmx256M -Xms256M"
     healthcheck:
       test: ["CMD-SHELL", "nc -z localhost 29092 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - microservices-net
+
+  kafka-2:
+    image: confluentinc/cp-kafka:7.3.2
+    container_name: kafka-2
+    restart: unless-stopped
+    depends_on:
+      - zookeeper
+    ports:
+      - "9093:9093"
+    environment:
+      KAFKA_BROKER_ID: 2
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-2:29093,PLAINTEXT_HOST://localhost:9093
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTERBROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 2
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 2
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_HEAP_OPTS: "-Xmx256M -Xms256M"
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 29093 || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -100,28 +132,31 @@ services:
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
     container_name: kafka-ui
+    restart: unless-stopped
     depends_on:
       kafka:
+        condition: service_healthy
+      kafka-2:
         condition: service_healthy
     ports:
       - "8080:8080"
     environment:
       KAFKA_CLUSTERS_0_NAME: local
-      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: "kafka:29092"
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: "kafka:29092,kafka-2:29093"
     networks:
       - microservices-net
 
-  # --- CLUSTER RABBITMQ ---
+  # --- CLÚSTER RABBITMQ ---
   rabbitmq1:
     image: rabbitmq:3-management
     container_name: rabbitmq-node1
     hostname: rabbitmq1
     restart: always
     environment:
-      RABBITMQ_ERLANG_COOKIE: "SECRET_COOKIE_RABBITMQ_CLUSTER"
+      RABBITMQ_ERLANG_COOKIE: ${RABBITMQ_ERLANG_COOKIE:-SECRET_COOKIE_RABBITMQ_CLUSTER}
       RABBITMQ_NODENAME: "rabbit@rabbitmq1"
-      RABBITMQ_DEFAULT_USER: "guest"
-      RABBITMQ_DEFAULT_PASS: "guest"
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS:-guest}
     ports:
       - "5672:5672"
       - "15672:15672"
@@ -139,7 +174,7 @@ services:
     hostname: rabbitmq2
     restart: always
     environment:
-      RABBITMQ_ERLANG_COOKIE: "SECRET_COOKIE_RABBITMQ_CLUSTER"
+      RABBITMQ_ERLANG_COOKIE: ${RABBITMQ_ERLANG_COOKIE:-SECRET_COOKIE_RABBITMQ_CLUSTER}
       RABBITMQ_NODENAME: "rabbit@rabbitmq2"
     depends_on:
       rabbitmq1:
@@ -167,11 +202,11 @@ services:
       - SPRING_CONFIG_IMPORT=configserver:http://config-server:8888
       - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/bd_usuario?createDatabaseIfNotExist=true
       - SPRING_DATASOURCE_USERNAME=root
-      - SPRING_DATASOURCE_PASSWORD=root
+      - SPRING_DATASOURCE_PASSWORD=${MYSQL_ROOT_PASSWORD:-root}
       - SPRING_RABBITMQ_ADDRESSES=rabbitmq1:5672,rabbitmq2:5672
-      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:29092
-      - MAIL_USERNAME=pedido360@kevinsosag.onmicrosoft.com
-      - MAIL_PASSWORD=Mofu803407
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:29092,kafka-2:29093
+      - MAIL_USERNAME=${USUARIO_MAIL_USERNAME}
+      - MAIL_PASSWORD=${USUARIO_MAIL_PASSWORD}
     depends_on:
       config-server:
         condition: service_started
@@ -180,7 +215,7 @@ services:
       rabbitmq1:
         condition: service_healthy
       kafka:
-        condition: service_started
+        condition: service_healthy
     networks:
       - microservices-net
 
@@ -193,9 +228,9 @@ services:
       - SPRING_CONFIG_IMPORT=configserver:http://config-server:8888
       - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/bd_producto?createDatabaseIfNotExist=true
       - SPRING_DATASOURCE_USERNAME=root
-      - SPRING_DATASOURCE_PASSWORD=root
+      - SPRING_DATASOURCE_PASSWORD=${MYSQL_ROOT_PASSWORD:-root}
       - SPRING_RABBITMQ_ADDRESSES=rabbitmq1:5672,rabbitmq2:5672
-      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:29092,kafka-2:29093
     depends_on:
       config-server:
         condition: service_started
@@ -204,7 +239,7 @@ services:
       rabbitmq1:
         condition: service_healthy
       kafka:
-        condition: service_started
+        condition: service_healthy
     networks:
       - microservices-net
 
@@ -216,11 +251,11 @@ services:
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
       - SPRING_CONFIG_IMPORT=configserver:http://config-server:8888
       - SPRING_RABBITMQ_ADDRESSES=rabbitmq1:5672,rabbitmq2:5672
-      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:29092,kafka-2:29093
       - SPRING_MAIL_HOST=smtp.gmail.com
       - SPRING_MAIL_PORT=587
-      - SPRING_MAIL_USERNAME=offgdev@gmail.com
-      - SPRING_MAIL_PASSWORD=mffekeaafoetuztr
+      - SPRING_MAIL_USERNAME=${MENSAJERIA_MAIL_USERNAME}
+      - SPRING_MAIL_PASSWORD=${MENSAJERIA_MAIL_PASSWORD}
       - SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH=true
       - SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE=true
     depends_on:
@@ -229,7 +264,7 @@ services:
       config-server:
         condition: service_started
       kafka:
-        condition: service_started
+        condition: service_healthy
     networks:
       - microservices-net
 
@@ -243,7 +278,7 @@ services:
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
       - SPRING_CONFIG_IMPORT=configserver:http://config-server:8888
       - SPRING_RABBITMQ_ADDRESSES=rabbitmq1:5672,rabbitmq2:5672
-      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:29092,kafka-2:29093
     depends_on:
       rabbitmq1:
         condition: service_healthy
@@ -252,7 +287,7 @@ services:
       eureka-server:
         condition: service_started
       kafka:
-        condition: service_started
+        condition: service_healthy
     networks:
       - microservices-net
 
