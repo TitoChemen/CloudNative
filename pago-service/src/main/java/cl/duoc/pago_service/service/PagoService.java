@@ -94,7 +94,7 @@ public class PagoService {
             kafkaProducerService.publicarEvento(
                     "pedidos.eventos",
                     String.valueOf(request.getPedidoId()),
-                    objectMapper.writeValueAsString(evento)
+                    evento
             );
         } catch (Exception e) {
             log.error("No se pudo publicar PedidoEventoDTO en Kafka: {}", e.getMessage());

@@ -55,7 +55,7 @@ public class KafkaConfig {
     @Bean
     public DefaultErrorHandler errorHandler(KafkaTemplate<Object, Object> template) {
         DeadLetterPublishingRecoverer recoverer = new DeadLetterPublishingRecoverer(template,
-                (r, e) -> new TopicPartition(r.topic() + ".DLT", r.partition()));
+                (r, e) -> new TopicPartition(r.topic() + ".DLT", -1));
 
         ExponentialBackOff backOff = new ExponentialBackOff(1000L, 2.0);
         backOff.setMaxElapsedTime(4000L);
