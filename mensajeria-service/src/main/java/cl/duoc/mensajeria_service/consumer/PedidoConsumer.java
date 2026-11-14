@@ -38,7 +38,11 @@ public class PedidoConsumer {
     public void procesarNotificacionPedido(@Payload String mensajeJson) {
         PedidoEventoDTO evento;
         try {
-            evento = objectMapper.readValue(mensajeJson, PedidoEventoDTO.class);
+            String jsonLimpio = mensajeJson;
+            if (jsonLimpio != null && jsonLimpio.startsWith("\"") && jsonLimpio.endsWith("\"")) {
+                jsonLimpio = objectMapper.readValue(jsonLimpio, String.class);
+            }
+            evento = objectMapper.readValue(jsonLimpio, PedidoEventoDTO.class);
         } catch (Exception e) {
             throw new ErrorNoRecuperableException("JSON inválido en pedidos.eventos: " + e.getMessage(), e);
         }

@@ -106,9 +106,17 @@ public class AnaliticaStreamsConfig {
         return pedidosStream;
     }
 
+    private JsonNode parsearJson(String json) throws Exception {
+        JsonNode root = objectMapper.readTree(json);
+        if (root != null && root.isTextual()) {
+            root = objectMapper.readTree(root.asText());
+        }
+        return root;
+    }
+
     private double extraerMonto(String json) {
         try {
-            JsonNode root = objectMapper.readTree(json);
+            JsonNode root = parsearJson(json);
             if (root.has("payload") && root.get("payload").has("montoTotal")) {
                 return root.get("payload").get("montoTotal").asDouble(0.0);
             }
@@ -123,7 +131,7 @@ public class AnaliticaStreamsConfig {
 
     private String extraerCampo(String json, String campo, String defecto) {
         try {
-            JsonNode root = objectMapper.readTree(json);
+            JsonNode root = parsearJson(json);
             if (root.has(campo) && !root.get(campo).isNull()) {
                 return root.get(campo).asText(defecto);
             }
