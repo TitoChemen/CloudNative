@@ -41,7 +41,7 @@ public class KafkaConfig {
     public NewTopic pedidosTopic() {
         return TopicBuilder.name("pedidos.eventos")
                 .partitions(3)
-                .replicas(1)
+                .replicas(2)
                 .config("retention.ms", "604800000")
                 .config("cleanup.policy", "delete")
                 .build();
@@ -51,7 +51,7 @@ public class KafkaConfig {
     public NewTopic auditoriaTopic() {
         return TopicBuilder.name("auditoria.actividad")
                 .partitions(3)
-                .replicas(1)
+                .replicas(2)
                 .config("retention.ms", "2592000000")
                 .config("cleanup.policy", "compact")
                 .build();
@@ -59,12 +59,12 @@ public class KafkaConfig {
 
     @Bean
     public NewTopic pedidosDltTopic() {
-        return TopicBuilder.name("pedidos.eventos.DLT").partitions(3).replicas(1).build();
+        return TopicBuilder.name("pedidos.eventos.DLT").partitions(3).replicas(2).build();
     }
 
     @Bean
     public NewTopic auditoriaDltTopic() {
-        return TopicBuilder.name("auditoria.actividad.DLT").partitions(3).replicas(1).build();
+        return TopicBuilder.name("auditoria.actividad.DLT").partitions(3).replicas(2).build();
     }
 
     @Bean

@@ -62,7 +62,6 @@ public class SecurityConfig {
                         .pathMatchers("/api/v1/productos/**", "/api/v1/productos").permitAll()
                         .pathMatchers("/api/v1/usuario", "/api/v1/usuario/", "/api/v1/usuario/**", "/api/v1/usuarios/**").permitAll()
                         .pathMatchers("/api/pagos/**", "/api/pagos").permitAll()
-                        .pathMatchers("/api/v1/queues/**", "/api/v1/queues").permitAll()
                         .pathMatchers("/api/mensajeria/**", "/api/mensajeria").permitAll()
                         .pathMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .anyExchange().authenticated()

@@ -1,19 +1,18 @@
 package cl.duoc.usuario_service.service;
 
+import cl.duoc.usuario_service.dto.AuditoriaEventoDTO;
 import cl.duoc.usuario_service.dto.UsuarioDTO;
 import cl.duoc.usuario_service.mapper.UsuarioMapper;
 import cl.duoc.usuario_service.model.Usuario;
 import cl.duoc.usuario_service.repository.UsuarioRepository;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -30,8 +29,6 @@ public class UsuarioService {
 
     @Autowired(required = false)
     private KafkaProducerService kafkaProducerService;
-
-    private final ObjectMapper objectMapper = new ObjectMapper();
 
     public List<Usuario> findAll() {
         return usuarioRepository.findAll();
@@ -106,17 +103,18 @@ public class UsuarioService {
             return;
         }
         try {
-            Map<String, Object> payload = new LinkedHashMap<>();
-            payload.put("accion", accion);
-            payload.put("usuarioId", usuarioId);
-            payload.put("email", email);
-            payload.put("timestamp", Instant.now().toString());
+            AuditoriaEventoDTO evento = new AuditoriaEventoDTO(
+                    UUID.randomUUID().toString(),
+                    "usuario-service",
+                    accion,
+                    email,
+                    Instant.now().toString()
+            );
 
-            String jsonEvento = objectMapper.writeValueAsString(payload);
             kafkaProducerService.publicarEvento(
                     "auditoria.actividad",
                     String.valueOf(usuarioId),
-                    jsonEvento
+                    evento
             );
         } catch (Exception e) {
             log.error("No se pudo enviar evento de auditoría a Kafka: {}", e.getMessage());
