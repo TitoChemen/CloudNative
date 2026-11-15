@@ -25,7 +25,7 @@ export default function Simulador() {
   // 2. Crear Cola Dinámica (AmqpAdmin + DTO Validation)
   const crearColaDinamica = async () => {
     try {
-      const data = await api.post('/api/pagos/admin/queues', {
+      const data = await api.post('/api/v1/queues', {
         nombreCola: nombreNuevaCola,
         durable: true
       });
@@ -46,7 +46,7 @@ export default function Simulador() {
       return;
     }
     try {
-      const data = await api.delete(`/api/pagos/admin/queues/${nombreNuevaCola}`);
+      const data = await api.delete(`/api/v1/queues/${nombreNuevaCola}`);
       agregarLog('🗑️ AMQP ADMIN', data.mensaje);
     } catch (err) {
       agregarLog('❌ FAIL', err.message);
